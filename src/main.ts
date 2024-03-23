@@ -130,32 +130,46 @@ export default class MarkdownExtended extends Plugin {
         let newAltValue = "";
         let replaceAlt = false;
 
-        // Split using a semi-colon, trim, then filter out empty entries
-        const altLines = alt
-            .split(";")
-            .map((line) => line.trim())
-            .filter((line) => line);
-        altLines.forEach((line) => {
-            // Check for custom css styling
-            if (line.startsWith(CSS_TOKEN)) {
-                const cssClassStr = line.slice(CSS_TOKEN.length).trim();
-                // Parse into array of classes
-                if (cssClassStr) {
-                    cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
+        if (alt.contains(CSS_TOKEN) || alt.contains(ALT_TOKEN) || alt.contains(CAPTION_TOKEN)) {
+            // Split using a semi-colon, trim, then filter out empty entries
+            const altLines = alt
+                .split(";")
+                .map((line) => line.trim())
+                .filter((line) => line);
+            altLines.forEach((line) => {
+                // Check for custom css styling
+                if (line.startsWith(CSS_TOKEN)) {
+                    const cssClassStr = line.slice(CSS_TOKEN.length).trim();
+                    // Parse into array of classes
+                    if (cssClassStr) {
+                        cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
+                        replaceAlt = true;
+                    }
+                }
+                // Look for alt text that should stay when processing is done
+                else if (line.startsWith(ALT_TOKEN)) {
+                    newAltValue = line.slice(ALT_TOKEN.length).trim();
                     replaceAlt = true;
                 }
+                // Look for caption to be placed after image
+                else if (line.startsWith(CAPTION_TOKEN)) {
+                    caption += ` ${line.slice(CAPTION_TOKEN.length).trim()}`;
+                    replaceAlt = true;
+                }
+            });
+        } else {
+            // No tokens, check if alt is just the file name
+            let fileName = img.src;
+            // Remove '?' if it's present
+            const qMark = fileName.indexOf("?");
+            if (qMark > -1) {
+                fileName = fileName.slice(0, qMark);
             }
-            // Look for alt text that should stay when processing is done
-            else if (line.startsWith(ALT_TOKEN)) {
-                newAltValue = line.slice(ALT_TOKEN.length).trim();
-                replaceAlt = true;
+            if (!fileName.endsWith(alt)) {
+                // process as caption, but leave alt
+                caption = alt;
             }
-            // Look for caption to be placed after image
-            else if (line.startsWith(CAPTION_TOKEN)) {
-                caption += ` ${line.slice(CAPTION_TOKEN.length).trim()}`;
-                replaceAlt = true;
-            }
-        });
+        }
 
         // Replace alt if necessary
         if (replaceAlt) {
