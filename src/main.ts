@@ -15,8 +15,10 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
 };
 
 const CSS_TOKEN = "css:";
+const CLS_TOKEN = "cls:";
 const ALT_TOKEN = "alt:";
 const CAPTION_TOKEN = "caption:";
+const CAP_TOKEN = "cap:";
 
 export default class MarkdownExtended extends Plugin {
     settings: MarkdownExtendedSettings;
@@ -130,7 +132,7 @@ export default class MarkdownExtended extends Plugin {
         let newAltValue = "";
         let replaceAlt = false;
 
-        if (alt.contains(CSS_TOKEN) || alt.contains(ALT_TOKEN) || alt.contains(CAPTION_TOKEN)) {
+        if (alt.contains(CSS_TOKEN) || alt.contains(CLS_TOKEN) || alt.contains(ALT_TOKEN) || alt.contains(CAPTION_TOKEN) || alt.contains(CAP_TOKEN)) {
             // Split using a semi-colon, trim, then filter out empty entries
             const altLines = alt
                 .split(";")
@@ -145,6 +147,13 @@ export default class MarkdownExtended extends Plugin {
                         cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
                         replaceAlt = true;
                     }
+                } else if (line.startsWith(CLS_TOKEN)) {
+                    const cssClassStr = line.slice(CLS_TOKEN.length).trim();
+                    // Parse into array of classes
+                    if (cssClassStr) {
+                        cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
+                        replaceAlt = true;
+                    }
                 }
                 // Look for alt text that should stay when processing is done
                 else if (line.startsWith(ALT_TOKEN)) {
@@ -154,6 +163,9 @@ export default class MarkdownExtended extends Plugin {
                 // Look for caption to be placed after image
                 else if (line.startsWith(CAPTION_TOKEN)) {
                     caption += ` ${line.slice(CAPTION_TOKEN.length).trim()}`;
+                    replaceAlt = true;
+                } else if (line.startsWith(CAP_TOKEN)) {
+                    caption += ` ${line.slice(CAP_TOKEN.length).trim()}`;
                     replaceAlt = true;
                 }
             });
