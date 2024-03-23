@@ -29,14 +29,29 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
-            .setName("Inline description lists")
+            .setName("Description lists")
             .setDesc(
-                "Allows description lists (also known as definition lists) to be defined on the same line, separated by a double-colon (::). This setting can potentially interfere with other plugins that rely on a double-colon as a token."
+                "Render multiple lines of text into description lists (also known as definition lists) when the second and subsequent lines each start with a colon (:) followed by a space."
             )
             .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.renderInlineDefLists).onChange(async (value) => {
+                toggle.setValue(this.plugin.settings.renderDLists).onChange(async (value) => {
                     // Update settings
-                    this.plugin.settings.renderInlineDefLists = value;
+                    this.plugin.settings.renderDLists = value;
+                    await this.plugin.saveSettings();
+                    // Refresh settings view
+                    this.display();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName("Inline description lists")
+            .setDesc(
+                "Allows description lists to be defined on the same line, separated by a double-colon (::). This setting can potentially interfere with other plugins that rely on a double-colon as a token. Requires the 'Description lists' setting above to be turned on."
+            )
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.renderInlineDLists).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.renderInlineDLists = value;
                     await this.plugin.saveSettings();
                     // Refresh settings view
                     this.display();

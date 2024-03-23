@@ -8,7 +8,8 @@ interface MarkdownExtendedSettings {
     version: string;
     previousVersion: string;
     renderImageProperties: boolean;
-    renderInlineDefLists: boolean;
+    renderDLists: boolean;
+    renderInlineDLists: boolean;
     renderInlineQuotes: boolean;
     renderSubscript: boolean;
     renderSuperscript: boolean;
@@ -18,7 +19,8 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     version: "",
     previousVersion: "",
     renderImageProperties: true,
-    renderInlineDefLists: true,
+    renderDLists: true,
+    renderInlineDLists: true,
     renderInlineQuotes: true,
     renderSubscript: true,
     renderSuperscript: true,
@@ -151,13 +153,13 @@ export default class MarkdownExtended extends Plugin {
         }
 
         // Render description lists
-        const dlistRegex = new RegExp(`^\\s*${DLIST_TOKEN}.+$`, "im");
-        if (container.textContent.match(dlistRegex)) {
+        const dListRegex = new RegExp(`^\\s*${DLIST_TOKEN}.+$`, "im");
+        if (this.settings.renderDLists && container.textContent.match(dListRegex)) {
             renderDescriptionList(container);
         }
         // Render inline description lists
         const inlineDListRegex = new RegExp(`^.+\\s+${DLIST_INLINE_TOKEN}\\s*.*$`, "im");
-        if (this.settings.renderInlineDefLists && container.textContent.match(inlineDListRegex)) {
+        if (this.settings.renderDLists && this.settings.renderInlineDLists && container.textContent.match(inlineDListRegex)) {
             renderInlineDescriptionList(container);
         }
         // Render inline quotations
