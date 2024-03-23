@@ -27,5 +27,43 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
                     this.display();
                 })
             );
+        new Setting(containerEl)
+            .setName("Inline Quotes")
+            .setDesc('Render text surrounded by double quotation marks ("") between <q></q> tags.')
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.renderInlineQuotes).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.renderInlineQuotes = value;
+                    await this.plugin.saveSettings();
+                    // Refresh settings view
+                    this.display();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName("Subscript")
+            .setDesc("Render text surrounded by single tildes (~) between <sub></sub> tags.")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.renderSubscript).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.renderSubscript = value;
+                    await this.plugin.saveSettings();
+                    // Refresh settings view
+                    this.display();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName("Superscript")
+            .setDesc("Render text surrounded by single carets (^) between <sup></sup> tags.")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.renderSuperscript).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.renderSuperscript = value;
+                    await this.plugin.saveSettings();
+                    // Refresh settings view
+                    this.display();
+                })
+            );
     }
 }

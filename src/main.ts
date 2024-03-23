@@ -1,19 +1,29 @@
 import { MarkdownPostProcessorContext, Plugin } from "obsidian";
 import { valid, lt } from "semver";
 import { MarkdownExtendedSettingsTab } from "./settings";
+import { renderMarkdownToken, toggleToken } from "./components/text";
 
 interface MarkdownExtendedSettings {
     version: string;
     previousVersion: string;
     renderImageProperties: boolean;
+    renderInlineQuotes: boolean;
+    renderSubscript: boolean;
+    renderSuperscript: boolean;
 }
 
 const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     version: "",
     previousVersion: "",
     renderImageProperties: true,
+    renderInlineQuotes: true,
+    renderSubscript: true,
+    renderSuperscript: true,
 };
 
+const QUOTE_TOKEN = '""';
+const SUB_TOKEN = "~";
+const SUP_TOKEN = "^";
 const CSS_TOKEN = "css:";
 const CLS_TOKEN = "cls:";
 const ALT_TOKEN = "alt:";
@@ -36,6 +46,32 @@ export default class MarkdownExtended extends Plugin {
 
         // Set up processor to check containers
         this.registerMarkdownPostProcessor(this.processContainers.bind(this));
+
+        // Add commands
+        this.addCommand({
+            id: "toggle-quote",
+            name: "Toggle Quote",
+            icon: "quote",
+            editorCallback: (editor) => {
+                toggleToken(editor, QUOTE_TOKEN);
+            },
+        });
+        this.addCommand({
+            id: "toggle-subscript",
+            name: "Toggle Subscript",
+            icon: "subscript",
+            editorCallback: (editor) => {
+                toggleToken(editor, SUB_TOKEN);
+            },
+        });
+        this.addCommand({
+            id: "toggle-superscript",
+            name: "Toggle Superscript",
+            icon: "superscript",
+            editorCallback: (editor) => {
+                toggleToken(editor, SUP_TOKEN);
+            },
+        });
 
         console.log("Markdown Extended loaded");
     }
@@ -109,6 +145,22 @@ export default class MarkdownExtended extends Plugin {
 
                 this.addObserver(observer);
             });
+        }
+
+        // Render inline quotations
+        const quoteRegex = new RegExp(`^.*${QUOTE_TOKEN}.+${QUOTE_TOKEN}.*$`, "im");
+        if (this.settings.renderInlineQuotes && container.textContent.match(quoteRegex)) {
+            renderMarkdownToken(container, QUOTE_TOKEN, "q");
+        }
+        // Render subscript
+        const subRegex = new RegExp(`^.*${SUB_TOKEN}.+${SUB_TOKEN}.*$`, "im");
+        if (this.settings.renderSubscript && container.textContent.match(subRegex)) {
+            renderMarkdownToken(container, SUB_TOKEN, "sub");
+        }
+        // Render superscript
+        const supRegex = new RegExp(`^.*\\${SUP_TOKEN}.+\\${SUP_TOKEN}.*$`, "im");
+        if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
+            renderMarkdownToken(container, SUP_TOKEN, "sup");
         }
     }
 
