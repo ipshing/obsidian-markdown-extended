@@ -2,11 +2,13 @@ import { MarkdownPostProcessorContext, Plugin } from "obsidian";
 import { valid, lt } from "semver";
 import { MarkdownExtendedSettingsTab } from "./settings";
 import { renderMarkdownToken, toggleToken } from "./components/text";
+import { DLIST_INLINE_TOKEN, DLIST_TOKEN, renderDescriptionList, renderInlineDescriptionList } from "./components/list";
 
 interface MarkdownExtendedSettings {
     version: string;
     previousVersion: string;
     renderImageProperties: boolean;
+    renderInlineDefLists: boolean;
     renderInlineQuotes: boolean;
     renderSubscript: boolean;
     renderSuperscript: boolean;
@@ -16,6 +18,7 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     version: "",
     previousVersion: "",
     renderImageProperties: true,
+    renderInlineDefLists: true,
     renderInlineQuotes: true,
     renderSubscript: true,
     renderSuperscript: true,
@@ -147,6 +150,16 @@ export default class MarkdownExtended extends Plugin {
             });
         }
 
+        // Render description lists
+        const dlistRegex = new RegExp(`^\\s*${DLIST_TOKEN}.+$`, "im");
+        if (container.textContent.match(dlistRegex)) {
+            renderDescriptionList(container);
+        }
+        // Render inline description lists
+        const inlineDListRegex = new RegExp(`^.+\\s+${DLIST_INLINE_TOKEN}\\s*.*$`, "im");
+        if (this.settings.renderInlineDefLists && container.textContent.match(inlineDListRegex)) {
+            renderInlineDescriptionList(container);
+        }
         // Render inline quotations
         const quoteRegex = new RegExp(`^.*${QUOTE_TOKEN}.+${QUOTE_TOKEN}.*$`, "im");
         if (this.settings.renderInlineQuotes && container.textContent.match(quoteRegex)) {

@@ -27,6 +27,22 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
                     this.display();
                 })
             );
+
+        new Setting(containerEl)
+            .setName("Inline description lists")
+            .setDesc(
+                "Allows description lists (also known as definition lists) to be defined on the same line, separated by a double-colon (::). This setting can potentially interfere with other plugins that rely on a double-colon as a token."
+            )
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.renderInlineDefLists).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.renderInlineDefLists = value;
+                    await this.plugin.saveSettings();
+                    // Refresh settings view
+                    this.display();
+                })
+            );
+
         new Setting(containerEl)
             .setName("Inline Quotes")
             .setDesc('Render text surrounded by double quotation marks ("") between <q></q> tags.')
