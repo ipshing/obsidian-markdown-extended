@@ -48,14 +48,18 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
             .setDesc(
                 "Allows description lists to be defined on the same line, separated by a double-colon (::). This setting can potentially interfere with other plugins that rely on a double-colon as a token. Requires the 'Description lists' setting above to be turned on."
             )
+            .setDisabled(!this.plugin.settings.renderDLists)
             .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.renderInlineDLists).onChange(async (value) => {
-                    // Update settings
-                    this.plugin.settings.renderInlineDLists = value;
-                    await this.plugin.saveSettings();
-                    // Refresh settings view
-                    this.display();
-                })
+                toggle
+                    .setValue(this.plugin.settings.renderDLists && this.plugin.settings.renderInlineDLists)
+                    .setDisabled(!this.plugin.settings.renderDLists)
+                    .onChange(async (value) => {
+                        // Update settings
+                        this.plugin.settings.renderInlineDLists = value;
+                        await this.plugin.saveSettings();
+                        // Refresh settings view
+                        this.display();
+                    })
             );
 
         new Setting(containerEl)

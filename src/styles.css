@@ -1,1 +1,4 @@
-
+.mx-settings .setting-item.is-disabled .setting-item-name,
+.mx-settings .setting-item.is-disabled .setting-item-description {
+    color: var(--text-faint);
+}
