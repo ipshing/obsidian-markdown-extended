@@ -3,6 +3,9 @@ import { valid, lt } from "semver";
 import { MarkdownExtendedSettingsTab } from "./settings";
 import { renderMarkdownToken, toggleToken } from "./components/text";
 import { DLIST_INLINE_TOKEN, DLIST_TOKEN, renderDescriptionList, renderInlineDescriptionList } from "./components/list";
+import MarkdownIt from "markdown-it";
+import mTable from "markdown-it-multimd-table";
+import { MARKDOWN_IT_OPTIONS, TABLE_TOKEN, renderTable } from "./components/table";
 
 interface MarkdownExtendedSettings {
     version: string;
@@ -37,6 +40,7 @@ const CAP_TOKEN = "cap:";
 
 export default class MarkdownExtended extends Plugin {
     settings: MarkdownExtendedSettings;
+    md: MarkdownIt;
     private imageObservers: MutationObserver[];
 
     async onload() {
@@ -51,6 +55,16 @@ export default class MarkdownExtended extends Plugin {
 
         // Set up processor to check containers
         this.registerMarkdownPostProcessor(this.processContainers.bind(this));
+
+        // Set up MarkdownIt
+        this.md = MarkdownIt(MARKDOWN_IT_OPTIONS).use(mTable, {
+            multiline: true,
+            rowspan: true,
+            headerless: true,
+        });
+        /** keep only table required features, let obsidian handle the markdown inside cell */
+        this.md.block.ruler.enableOnly(["code", "fence", "table", "paragraph", "reference", "blockquote"]);
+        this.md.inline.ruler.enableOnly([]);
 
         // Add commands
         this.addCommand({
@@ -152,6 +166,10 @@ export default class MarkdownExtended extends Plugin {
             });
         }
 
+        // Render tables
+        if (container.textContent.trim().startsWith(TABLE_TOKEN)) {
+            renderTable(container, this, context);
+        }
         // Render description lists
         const dListRegex = new RegExp(`^\\s*${DLIST_TOKEN}.+$`, "im");
         if (this.settings.renderDLists && container.textContent.match(dListRegex)) {
