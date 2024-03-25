@@ -1,7 +1,7 @@
 {
     "id": "markdown-extended",
     "name": "Markdown Extended",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "minAppVersion": "1.0.0",
     "description": "Add extra markdown features and capabilities for improved formatting.",
     "author": "ipshing",
