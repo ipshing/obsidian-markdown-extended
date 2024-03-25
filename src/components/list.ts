@@ -8,10 +8,12 @@ class DescriptionList {
         const dl = createEl("dl");
         this.items.forEach((item) => {
             // Add the term (<dt>)
-            dl.createEl("dt", { text: item.term });
+            const dt = dl.createEl("dt");
+            dt.innerHTML = item.term;
             // Add the details (<dd>)
             item.details.forEach((detail) => {
-                dl.createEl("dl", { text: detail });
+                const dd = dl.createEl("dl");
+                dd.innerHTML = detail;
             });
         });
         return dl;
