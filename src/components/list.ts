@@ -12,7 +12,7 @@ class DescriptionList {
             dt.innerHTML = item.term;
             // Add the details (<dd>)
             item.details.forEach((detail) => {
-                const dd = dl.createEl("dl");
+                const dd = dl.createEl("dd");
                 dd.innerHTML = detail;
             });
         });
