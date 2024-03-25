@@ -140,32 +140,6 @@ export default class MarkdownExtended extends Plugin {
         // Ignore empty containers
         if (!container.hasChildNodes()) return;
 
-        // Set up observers for .internal-embed elements to format them
-        // after the embedded content has been loaded.
-        if (this.settings.renderImageProperties) {
-            container.findAll(".internal-embed").forEach((el) => {
-                const observer = new MutationObserver((mutations, observer) => {
-                    for (const mutation of mutations) {
-                        const embedContainer = mutation.target as HTMLElement;
-                        // Make sure content is an image and is loaded
-                        if (embedContainer.matches(".image-embed.is-loaded")) {
-                            // Format image
-                            this.renderEmbeddedImage(embedContainer);
-                        }
-                    }
-
-                    // Clean up
-                    this.removeObserver(observer);
-                });
-                observer.observe(el, {
-                    attributes: true,
-                    attributeFilter: ["class"],
-                });
-
-                this.addObserver(observer);
-            });
-        }
-
         // Render tables
         if (container.textContent.trim().startsWith(TABLE_TOKEN)) {
             renderTable(container, this, context);
@@ -194,6 +168,34 @@ export default class MarkdownExtended extends Plugin {
         const supRegex = new RegExp(`^.*\\${SUP_TOKEN}.+\\${SUP_TOKEN}.*$`, "im");
         if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
             renderMarkdownToken(container, SUP_TOKEN, "sup");
+        }
+
+        // Set up observers for .internal-embed elements to format them
+        // after the embedded content has been loaded. Run this after
+        // the above formatting has happened in case image elements were
+        // moved around during the rendering.
+        if (this.settings.renderImageProperties) {
+            container.findAll(".internal-embed").forEach((el) => {
+                const observer = new MutationObserver((mutations, observer) => {
+                    for (const mutation of mutations) {
+                        const embedContainer = mutation.target as HTMLElement;
+                        // Make sure content is an image and is loaded
+                        if (embedContainer.matches(".image-embed.is-loaded")) {
+                            // Format image
+                            this.renderEmbeddedImage(embedContainer);
+                        }
+                    }
+
+                    // Clean up
+                    this.removeObserver(observer);
+                });
+                observer.observe(el, {
+                    attributes: true,
+                    attributeFilter: ["class"],
+                });
+
+                this.addObserver(observer);
+            });
         }
     }
 
