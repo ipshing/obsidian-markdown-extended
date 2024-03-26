@@ -149,14 +149,32 @@ export function renderInlineDescriptionList(container: HTMLElement) {
             const child = paragraph.firstChild;
             // Line breaks (<br>) are the key dividers
             if (child.nodeName == "BR") {
-                // Push the list if there is one
+                // Check for list in progress (not null)
                 if (dl) {
-                    parent.insertAfter(dl, lastEl);
-                    lastEl = dl;
-                    // Reset all list items
-                    dl = null;
-                    dt = null;
-                    dd = null;
+                    // Look at following siblings until next <br>.
+                    // If another term/details pair is found,
+                    // don't push the list just yet.
+                    let found = false;
+                    let next = child.nextSibling;
+                    while (next && next.nodeName != "BR") {
+                        if (next.nodeName == "#text" && next.textContent.contains(DLIST_INLINE_TOKEN)) {
+                            found = true;
+                        }
+                        next = next.nextSibling;
+                    }
+                    if (found) {
+                        // Reset dt and dd to prep for new term/details
+                        dt = null;
+                        dd = null;
+                    } else {
+                        // No subsequent term, push list
+                        parent.insertAfter(dl, lastEl);
+                        lastEl = dl;
+                        // Reset all list items
+                        dl = null;
+                        dt = null;
+                        dd = null;
+                    }
                 }
                 // Add the line break to temp
                 temp.append(child);
@@ -164,21 +182,10 @@ export function renderInlineDescriptionList(container: HTMLElement) {
                 // identifying what goes into the dl below.
                 lastBR = child as HTMLBRElement;
             }
-            // If dl has a value, a list is being built;
-            // everything goes in the list
-            else if (dl) {
-                if (dd == null) {
-                    // This shouldn't happen, but just in case,
-                    // create a new dd and add it to dl.
-                    dd = dl.createEl("dd");
-                }
-                // Append child to dd
-                dd.append(child);
-            }
             // #text nodes that contain the token are the indicator for a list
             else if (child.nodeName == "#text" && child.textContent.contains(DLIST_INLINE_TOKEN)) {
                 // Create a new list with a dt and dd
-                dl = createEl("dl");
+                if (dl == null) dl = createEl("dl");
                 dt = dl.createEl("dt");
                 dd = dl.createEl("dd");
 
@@ -189,13 +196,16 @@ export function renderInlineDescriptionList(container: HTMLElement) {
                         // Push to dt (automatically removes from temp)
                         dt.append(lastBR.nextSibling);
                     }
-                    // Remove the <br> from temp
-                    temp.removeChild(lastBR);
+                    // Clear any leading/trailing line breaks from temp
+                    while (temp.firstChild && temp.firstChild.nodeName == "BR") temp.removeChild(temp.firstChild);
+                    while (temp.lastChild && temp.lastChild.nodeName == "BR") temp.removeChild(temp.lastChild);
+                    // If there are still nodes left, push temp
+                    if (temp.hasChildNodes()) {
+                        parent.insertAfter(temp, lastEl);
+                        lastEl = temp;
+                    }
                     // Reset lastBR
                     lastBR = null;
-                    // Push temp to parent
-                    parent.insertAfter(temp, lastEl);
-                    lastEl = temp;
                 }
                 // Othewrise, put everything from temp into the <dt>
                 else {
@@ -215,6 +225,17 @@ export function renderInlineDescriptionList(container: HTMLElement) {
                 // Remove the child from paragraph
                 paragraph.removeChild(child);
             }
+            // If dl has a value, a list is being built;
+            // everything goes in the list
+            else if (dl) {
+                if (dd == null) {
+                    // This shouldn't happen, but just in case,
+                    // create a new dd and add it to dl.
+                    dd = dl.createEl("dd");
+                }
+                // Append child to dd
+                dd.append(child);
+            }
             // For now, everything that's not a #text element should not
             // be checked. Just put it in temp until a token is found.
             else {
@@ -230,8 +251,8 @@ export function renderInlineDescriptionList(container: HTMLElement) {
         // If there is anything left in temp, push it
         if (temp.hasChildNodes()) {
             // If the first or last nodes are line breaks, remove them
-            if (temp.firstChild.nodeName == "BR") temp.removeChild(temp.firstChild);
-            if (temp.lastChild.nodeName == "BR") temp.removeChild(temp.lastChild);
+            while (temp.firstChild && temp.firstChild.nodeName == "BR") temp.removeChild(temp.firstChild);
+            while (temp.lastChild && temp.lastChild.nodeName == "BR") temp.removeChild(temp.lastChild);
             // If there are still nodes left, push temp
             if (temp.hasChildNodes()) {
                 parent.insertAfter(temp, lastEl);
