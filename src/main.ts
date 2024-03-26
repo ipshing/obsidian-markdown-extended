@@ -2,7 +2,7 @@ import { MarkdownPostProcessorContext, Plugin } from "obsidian";
 import { valid, lt } from "semver";
 import { MarkdownExtendedSettingsTab } from "./settings";
 import { renderMarkdownToken, toggleToken } from "./components/text";
-import { DLIST_INLINE_TOKEN, DLIST_TOKEN, renderDescriptionList, renderInlineDescriptionList } from "./components/list";
+import { DLIST_INLINE_REGEX, DLIST_REGEX, renderDescriptionList, renderInlineDescriptionList } from "./components/list";
 import MarkdownIt from "markdown-it";
 import mTable from "markdown-it-multimd-table";
 import { MARKDOWN_IT_OPTIONS, TABLE_TOKEN, renderTable } from "./components/table";
@@ -145,13 +145,11 @@ export default class MarkdownExtended extends Plugin {
             renderTable(container, this, context);
         }
         // Render description lists
-        const dListRegex = new RegExp(`^\\s*${DLIST_TOKEN}.+$`, "im");
-        if (this.settings.renderDLists && container.textContent.match(dListRegex)) {
+        if (this.settings.renderDLists && container.textContent.match(DLIST_REGEX)) {
             renderDescriptionList(container);
         }
         // Render inline description lists
-        const inlineDListRegex = new RegExp(`^.+\\s+${DLIST_INLINE_TOKEN}\\s*.*$`, "im");
-        if (this.settings.renderDLists && this.settings.renderInlineDLists && container.textContent.match(inlineDListRegex)) {
+        if (this.settings.renderDLists && this.settings.renderInlineDLists && container.textContent.match(DLIST_INLINE_REGEX)) {
             renderInlineDescriptionList(container);
         }
         // Render inline quotations

@@ -1,128 +1,103 @@
-class DescriptionList {
-    items: DescriptionListItem[];
-    constructor() {
-        this.items = [];
-    }
-    generateHtmlElement(): HTMLDListElement {
-        // Set up the list (<dl>)
-        const dl = createEl("dl");
-        this.items.forEach((item) => {
-            // Add the term (<dt>)
-            const dt = dl.createEl("dt");
-            dt.innerHTML = item.term;
-            // Add the details (<dd>)
-            item.details.forEach((detail) => {
-                const dd = dl.createEl("dd");
-                dd.innerHTML = detail;
-            });
-        });
-        return dl;
-    }
-}
-interface DescriptionListItem {
-    term: string;
-    details: string[];
-}
-
 export const DLIST_TOKEN = ": ";
+export const DLIST_REGEX = new RegExp(`^\\s*${DLIST_TOKEN}.+$`, "im");
 export const DLIST_INLINE_TOKEN = "::";
+export const DLIST_INLINE_REGEX = new RegExp(`^.+\\s+${DLIST_INLINE_TOKEN}\\s*.*$`, "im");
 
 export function renderDescriptionList(container: HTMLElement) {
     // Get all paragraph tags (<p>) in the container
-    container.findAll("p").forEach((paragraph) => {
+    const paragraphs = container.findAll("p");
+    for (const paragraph of paragraphs) {
+        // Skip paragraphs that don't have the token
+        if (!paragraph.textContent.match(DLIST_REGEX)) continue;
+
         // Get the parent of 'paragraph'
         const parent = paragraph.parentElement;
-        // Set up 'lastEl' as a reference for where to insert new elements
+        // Set up lastEl as a reference for where to insert new elements
         let lastEl = paragraph;
-        // Use innerHTML to split the text up by line breaks (<br>)
-        const lines = paragraph.innerHTML.split("<br>");
-        // Iterate through lines to build list(s). Any text not part of a list
-        // (before or after) should be put in <p> tags.
-        let buildingList = false;
-        let descriptionList: DescriptionList = new DescriptionList();
-        let pLines: string[] = [];
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            // Look for lines that don't start with ": "
-            // (to not have to read backward)
-            if (!line.trim().startsWith(DLIST_TOKEN)) {
-                // Look for ": " on next line
-                if (i + 1 < lines.length && lines[i + 1].trim().startsWith(DLIST_TOKEN)) {
-                    // Start building the list
-                    buildingList = true;
-                    // If there is any text in pLines, push that to
-                    // a <p> tag and add to the container
-                    if (pLines.length > 0) {
-                        const p = createEl("p");
-                        // Join using a line break (<br>) and new line char
-                        // (matches Obsidian behavior for multi-line text)
-                        p.innerHTML = pLines.join("<br>\n");
-                        // Insert after 'paragraph'
-                        parent.insertAfter(p, lastEl);
-                        lastEl = p;
-                        // Reset pLines
-                        pLines = [];
-                    }
-                    // Set line as term
-                    const term = line.trim();
-                    // Get details
-                    const details: string[] = [];
-                    while (i + 1 < lines.length) {
-                        const next = lines[i + 1].trim();
-                        if (next.startsWith(DLIST_TOKEN)) {
-                            details.push(next.slice(1).trim());
-                            i++;
-                        } else {
-                            break;
-                        }
-                    }
-                    // Add to list
-                    descriptionList.items.push({
-                        term: term,
-                        details: details,
-                    });
+        // Delcare the description list elements outside of the loop
+        let dl = createEl("dl");
+        let dt = dl.createEl("dt");
+        let dd: HTMLElement;
+        let currentPart = dt;
+        // Iterate using a while loop and the firstChild. Because we're
+        // appending the children to other collections, they get removed
+        // from 'paragraph' which messes with for loops.
+        while (paragraph.firstChild) {
+            const child = paragraph.firstChild;
+            // Line breaks (<br>) are the key dividers and determine
+            // whether to keep buildling the current item/list
+            if (child.nodeName == "BR") {
+                // If the next node is a details node, remove the <br>
+                // and loop so it can be added to the current list.
+                if (child.nextSibling && child.nextSibling.nodeName == "#text" && child.nextSibling.textContent.trimStart().startsWith(DLIST_TOKEN)) {
+                    paragraph.removeChild(child);
+                    continue;
                 }
-                // Otherwise, add the line to pLines
-                else {
-                    // First check if a list needs to be pushed to the container
-                    if (buildingList) {
-                        const list = descriptionList.generateHtmlElement();
-                        parent.insertAfter(list, lastEl);
-                        lastEl = list;
-                        // Then reset for a new list
-                        descriptionList = new DescriptionList();
-                        buildingList = false;
-                    }
-                    // Finally, push the line to pLines
-                    pLines.push(line.trim());
+                // If currentPart is a <dt> then the terms are still
+                // being built. Start a new dt, remove the <br>,
+                // then loop.
+                if (currentPart.nodeName == "DT") {
+                    dt = dl.createEl("dt");
+                    currentPart = dt;
+                    paragraph.removeChild(child);
+                    continue;
                 }
+                // If there are no more details, push the current list
+                parent.insertAfter(dl, lastEl);
+                lastEl = dl;
+                // Reset the list so it doesn't get caught after
+                // processing the paragraph.
+                dl = null;
+                // Check if there are any more tokens left
+                if (paragraph.textContent.match(DLIST_REGEX)) {
+                    // Create a new list, remove this <br>, then loop
+                    dl = createEl("dl");
+                    dt = dl.createEl("dt");
+                    currentPart = dt;
+                    paragraph.removeChild(child);
+                    continue;
+                }
+                // No tokens means the remaining nodes are not part of the list.
+                // Create a paragraph to hold the nodes, then push it to the parent.
+                const temp = createEl("p");
+                while (child.nextSibling) {
+                    temp.append(child.nextSibling);
+                }
+                parent.insertAfter(temp, lastEl);
+                lastEl = temp;
+                // Finally, remove this <br>
+                paragraph.removeChild(child);
             }
-            // Otherwise, add the line to pLines
+            // #text nodes that start with the token mark description details
+            else if (child.nodeName == "#text" && child.textContent.trimStart().startsWith(DLIST_TOKEN)) {
+                // Initialize a new dd
+                dd = dl.createEl("dd");
+                currentPart = dd;
+                // Take anything after the token and put it in dd
+                dd.append(child.textContent.slice(DLIST_TOKEN.length).trim());
+                // Look at the subsequent nodes until a line break.
+                // Use a while loop because append will remove the
+                // node from the paragraph automatically.
+                while (child.nextSibling && child.nextSibling.nodeName != "BR") {
+                    dd.append(child.nextSibling);
+                }
+                // Remove the child from paragraph
+                paragraph.removeChild(child);
+            }
+            // All other nodes should get pushed into the description term
             else {
-                pLines.push(line.trim());
+                dt.append(child);
             }
         }
 
-        // Check for any remaining lists (happens if the list
-        // was the last thing in the container).
-        if (buildingList) {
-            const list = descriptionList.generateHtmlElement();
-            parent.insertAfter(list, lastEl);
-            lastEl = list;
+        // If there is a list, push it
+        if (dl) {
+            parent.insertAfter(dl, lastEl);
+            lastEl = dl;
         }
-        // If there any left-over lines of text, push those into
-        // a final <p> element.
-        if (pLines.length > 0) {
-            const p = createEl("p");
-            // Join using a line break (<br>) and new line char
-            // (matches Obsidian behavior for multi-line text)
-            p.innerHTML = pLines.join("<br>\n");
-            // Insert after 'paragraph'
-            parent.insertAfter(p, lastEl);
-        }
-        // Finally, remove 'paragraph'
+        // Finally, remove paragraph
         parent.removeChild(paragraph);
-    });
+    }
 }
 
 export function renderInlineDescriptionList(container: HTMLElement) {
