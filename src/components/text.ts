@@ -4,71 +4,136 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
     // Validate
     if (!element || !element.hasChildNodes()) return;
 
-    element.findAll(":scope > *").forEach((child) => {
-        if (child.hasClass("callout")) {
-            // Only look at .callout-title-inner and .callout-content
+    // Rules for token replacement are:
+    //   - Tokens work in pairs
+    //   - Markdown formatting may occur between two tokens BUT
+    //     it must be fully contained between two tokens.
+    //   - Tokens that do not have a matching pair must remain unchanged
+
+    let orphan: { node: ChildNode; index: number };
+    for (let i = 0; i < element.childNodes.length; i++) {
+        const child = element.childNodes[i];
+        // Look for tokens inside #text nodes
+        if (child.nodeName == "#text" && child.textContent.contains(token)) {
+            // First check if there's an orphan that needs connecting
+            if (orphan) {
+                // Get the index of the token
+                let i = orphan.node.textContent.indexOf(token);
+                // Create a temporary container to hold processed nodes
+                const temp = createDiv();
+                // Add the text before the token
+                temp.append(orphan.node.textContent.slice(0, i));
+                // Create a new element using 'tag' and add the text after the token
+                const tokenEl = temp.createEl(tag, { text: orphan.node.textContent.slice(i + token.length) });
+                // Add all nodes after orphan (but before child) to tokenEl.
+                // This automatically removes them from 'element'.
+                while (orphan.node.nextSibling && orphan.node.nextSibling != child) {
+                    tokenEl.append(orphan.node.nextSibling);
+                }
+                // Get the index of the token in child
+                i = child.textContent.indexOf(token);
+                // Add the text before the token to tokenEl
+                tokenEl.append(child.textContent.slice(0, i));
+                // Add the text after the token to temp
+                temp.append(child.textContent.slice(i + token.length));
+                // Track the last child of temp
+                const last = temp.lastChild;
+                // Push everyhing from temp to after child
+                child.after(...temp.childNodes);
+                // Remove orphan and child
+                element.removeChild(orphan.node);
+                element.removeChild(child);
+                // Clear orphan
+                orphan = null;
+                // Set i = the index of 'last'
+                i = element.indexOf(last);
+                // Loop
+                continue;
+            }
+
+            const result = replaceTokensInText(child, token, tag);
+            if (result.nodes) {
+                // Add result.nodes after child, then remove child
+                child.after(...result.nodes);
+                element.removeChild(child);
+                // Set i to the index of the last node in result.nodes
+                i = element.indexOf(result.nodes.last());
+            }
+            if (result.orphan) {
+                // Track orphan
+                orphan = {
+                    node: result.orphan,
+                    index: element.indexOf(result.orphan),
+                };
+            }
+        }
+        // Only look at the title text and content of a callout
+        else if (child instanceof HTMLElement && child.hasClass("callout")) {
             const title = child.find(":scope > .callout-title > .callout-title-inner");
-            if (title) {
-                replaceToken(title, token, tag);
+            if (title && title.hasChildNodes()) {
+                renderMarkdownToken(title, token, tag);
             }
             const content = child.find(":scope > .callout-content");
-            if (content) {
-                // Recurse the content node (in case of nested callouts/tables)
+            if (content && content.hasChildNodes()) {
                 renderMarkdownToken(content, token, tag);
             }
-        } else {
-            // Process
-            replaceToken(child, token, tag);
         }
-    });
-}
-
-function replaceToken<K extends keyof HTMLElementTagNameMap>(element: HTMLElement, token: string, tag: K) {
-    // Validate arguments
-    if (!element || !element.hasChildNodes()) return;
-
-    let html = "",
-        index = -1,
-        inside = false;
-    const open = `<${tag}>`;
-    const close = `</${tag}>`;
-
-    // Process each child
-    element.childNodes.forEach((child: HTMLElement) => {
-        if (child.nodeName == "#text") {
-            // Get the text
-            let text = child.nodeValue;
-            // Look for double quotes
-            index = text.indexOf(token);
-            // Process
-            while (index > -1) {
-                inside = !inside;
-                const before = text.slice(0, index);
-                const after = text.slice(index + token.length);
-                text = `${before}${inside ? open : close}${after}`;
-                // Look for next double quote
-                index = text.indexOf(token, index + token.length);
-            }
-            html += text;
-        } else {
-            // Just put into html
-            html += child.outerHTML;
-        }
-    });
-
-    // Look for last opening tag and make sure there's a following closing or revert it
-    index = html.lastIndexOf(open);
-    if (index > -1) {
-        const match = html.lastIndexOf(close);
-        if (match > -1 && match < index) {
-            const before = html.slice(0, index);
-            const after = html.slice(index + token.length + 1);
-            html = `${before}${token}${after}`;
+        // Cast to HTMLElement to avoid #text nodes
+        // that don't include the token.
+        else if (child instanceof HTMLElement && child.hasChildNodes()) {
+            // Recurse to look inside element
+            renderMarkdownToken(child, token, tag);
         }
     }
+}
 
-    // Replace element html
-    element.innerHTML = html;
+interface ReplacementResult {
+    nodes?: ChildNode[];
+    orphan?: ChildNode;
+}
+
+function replaceTokensInText<K extends keyof HTMLElementTagNameMap>(textNode: ChildNode, token: string, tag: K): ReplacementResult {
+    const result: ReplacementResult = {};
+    // Create a temporary container to hold processed nodes
+    const temp = createDiv();
+    // Extract the text
+    const text = textNode.textContent;
+    // Look for token
+    const i = text.indexOf(token);
+    if (i == -1) return result;
+    // Check to make sure the closing tag isn't also in this node
+    const j = text.indexOf(token, i + token.length);
+    if (j > i) {
+        // Split up the node, placing the text between the tokens
+        // in a new element using 'tag'. Add the nodes to temp.
+        temp.append(text.slice(0, i));
+        temp.createEl(tag, { text: text.slice(i + token.length, j) });
+        temp.append(text.slice(j + token.length));
+
+        // Check the last node in temp for the token and recurse if found
+        if (temp.lastChild.textContent.contains(token)) {
+            const res = replaceTokensInText(temp.lastChild, token, tag);
+            if (res.nodes) {
+                // Remove the last child and replace with res.nodes
+                temp.removeChild(temp.lastChild);
+                temp.append(...res.nodes);
+            }
+            if (res.orphan) {
+                // Set to result.orphan
+                result.orphan = res.orphan;
+            }
+        }
+
+        // Put all nodes from temp into result.nodes
+        result.nodes = [];
+        result.nodes.push(...temp.childNodes);
+    }
+    // Otherwise note the node as an orphan
+    else {
+        result.orphan = textNode;
+    }
+
+    return result;
 }
 
 export function toggleToken(editor: Editor, token: string) {

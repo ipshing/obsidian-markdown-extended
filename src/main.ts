@@ -153,17 +153,17 @@ export default class MarkdownExtended extends Plugin {
             renderInlineDescriptionList(container);
         }
         // Render inline quotations
-        const quoteRegex = new RegExp(`^.*${QUOTE_TOKEN}.+${QUOTE_TOKEN}.*$`, "im");
+        const quoteRegex = new RegExp(`^.*${QUOTE_TOKEN}.+${QUOTE_TOKEN}.*$`, "is");
         if (this.settings.renderInlineQuotes && container.textContent.match(quoteRegex)) {
             renderMarkdownToken(container, QUOTE_TOKEN, "q");
         }
         // Render subscript
-        const subRegex = new RegExp(`^.*${SUB_TOKEN}.+${SUB_TOKEN}.*$`, "im");
+        const subRegex = new RegExp(`^.*${SUB_TOKEN}.+${SUB_TOKEN}.*$`, "is");
         if (this.settings.renderSubscript && container.textContent.match(subRegex)) {
             renderMarkdownToken(container, SUB_TOKEN, "sub");
         }
         // Render superscript
-        const supRegex = new RegExp(`^.*\\${SUP_TOKEN}.+\\${SUP_TOKEN}.*$`, "im");
+        const supRegex = new RegExp(`^.*\\${SUP_TOKEN}.+\\${SUP_TOKEN}.*$`, "is");
         if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
             renderMarkdownToken(container, SUP_TOKEN, "sup");
         }
