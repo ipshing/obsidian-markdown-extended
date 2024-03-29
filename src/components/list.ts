@@ -74,7 +74,7 @@ export function renderDescriptionList(container: HTMLElement) {
                 dd = dl.createEl("dd");
                 currentPart = dd;
                 // Take anything after the token and put it in dd
-                dd.append(child.textContent.slice(DLIST_TOKEN.length).trim());
+                dd.append(child.textContent.trimStart().slice(DLIST_TOKEN.length).replace("\n", ""));
                 // Look at the subsequent nodes until a line break.
                 // Use a while loop because append will remove the
                 // node from the paragraph automatically.
