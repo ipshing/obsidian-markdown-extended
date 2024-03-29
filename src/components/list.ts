@@ -194,9 +194,9 @@ export function renderInlineDescriptionList(container: HTMLElement) {
                 // Split the #text node around the token
                 const i = child.textContent.indexOf(DLIST_INLINE_TOKEN);
                 // Put everything before into dt
-                dt.append(child.textContent.slice(0, i).trim());
+                dt.append(child.textContent.slice(0, i).trimEnd());
                 // Put everything after into dd
-                dd.append(child.textContent.slice(i + DLIST_INLINE_TOKEN.length).trim());
+                dd.append(child.textContent.slice(i + DLIST_INLINE_TOKEN.length).trimStart());
                 // Remove the child from paragraph
                 paragraph.removeChild(child);
             }
