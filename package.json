@@ -1,6 +1,6 @@
 {
     "name": "markdown-extended",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "description": "Add extra markdown features and capabilities for improved formatting.",
     "main": "main.js",
     "scripts": {
