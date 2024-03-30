@@ -6,6 +6,7 @@ import { DLIST_INLINE_REGEX, DLIST_REGEX, renderDescriptionList, renderInlineDes
 import MarkdownIt from "markdown-it";
 import mTable from "markdown-it-multimd-table";
 import { MARKDOWN_IT_OPTIONS, TABLE_TOKEN, renderTable } from "./components/table";
+import { renderImageAttributes } from "./components/image";
 
 interface MarkdownExtendedSettings {
     version: string;
@@ -32,11 +33,6 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
 const QUOTE_TOKEN = '""';
 const SUB_TOKEN = "~";
 const SUP_TOKEN = "^";
-const CSS_TOKEN = "css:";
-const CLS_TOKEN = "cls:";
-const ALT_TOKEN = "alt:";
-const CAPTION_TOKEN = "caption:";
-const CAP_TOKEN = "cap:";
 
 export default class MarkdownExtended extends Plugin {
     settings: MarkdownExtendedSettings;
@@ -167,23 +163,29 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
             renderMarkdownToken(container, SUP_TOKEN, "sup");
         }
-
-        // Set up observers for .internal-embed elements to format them
-        // after the embedded content has been loaded. Run this after
-        // the above formatting has happened in case image elements were
-        // moved around during the rendering.
+        // Render image attributes
         if (this.settings.renderImageProperties) {
+            // <img> tags indicate an external link. These can just be
+            // formatted in place right now.
+            container.findAll("img").forEach((img) => {
+                // Format image
+                renderImageAttributes(img);
+            });
+            // Set up observers for embedded images to format them
+            // after the content has been loaded. Run this after
+            // all other formatting has happened in case image
+            // elements were moved around during the rendering process.
             container.findAll(".internal-embed").forEach((el) => {
                 const observer = new MutationObserver((mutations, observer) => {
                     for (const mutation of mutations) {
-                        const embedContainer = mutation.target as HTMLElement;
-                        // Make sure content is an image and is loaded
-                        if (embedContainer.matches(".image-embed.is-loaded")) {
+                        const target = mutation.target as HTMLElement;
+                        // Make sure content is either an <img> or, if
+                        // it's embedded, that it's finished loading.
+                        if (target.matches(".image-embed.is-loaded")) {
                             // Format image
-                            this.renderEmbeddedImage(embedContainer);
+                            renderImageAttributes(target);
                         }
                     }
-
                     // Clean up
                     this.removeObserver(observer);
                 });
@@ -191,123 +193,8 @@ export default class MarkdownExtended extends Plugin {
                     attributes: true,
                     attributeFilter: ["class"],
                 });
-
                 this.addObserver(observer);
             });
-        }
-    }
-
-    /**
-     * Replaces the default image rendering functionality by extracting
-     * css classes and captions from the 'alt' text of an <img> and
-     * adding it to the element.
-     * @param embedContainer The HTMLElement containing the <img> tag.
-     */
-    renderEmbeddedImage(embedContainer: HTMLElement) {
-        // Get the "alt" value and parse for properties
-        const alt = embedContainer.getAttribute("alt");
-        if (!alt) return;
-
-        // Get image
-        const img = embedContainer.querySelector("img");
-        if (!img) return;
-
-        const cssClasses: string[] = [];
-        let caption = "";
-        let newAltValue = "";
-        let replaceAlt = false;
-
-        if (alt.contains(CSS_TOKEN) || alt.contains(CLS_TOKEN) || alt.contains(ALT_TOKEN) || alt.contains(CAPTION_TOKEN) || alt.contains(CAP_TOKEN)) {
-            // Split using a semi-colon, trim, then filter out empty entries
-            const altLines = alt
-                .split(";")
-                .map((line) => line.trim())
-                .filter((line) => line);
-            altLines.forEach((line) => {
-                // Check for custom css styling
-                if (line.startsWith(CSS_TOKEN)) {
-                    const cssClassStr = line.slice(CSS_TOKEN.length).trim();
-                    // Parse into array of classes
-                    if (cssClassStr) {
-                        cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
-                        replaceAlt = true;
-                    }
-                } else if (line.startsWith(CLS_TOKEN)) {
-                    const cssClassStr = line.slice(CLS_TOKEN.length).trim();
-                    // Parse into array of classes
-                    if (cssClassStr) {
-                        cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
-                        replaceAlt = true;
-                    }
-                }
-                // Look for alt text that should stay when processing is done
-                else if (line.startsWith(ALT_TOKEN)) {
-                    newAltValue = line.slice(ALT_TOKEN.length).trim();
-                    replaceAlt = true;
-                }
-                // Look for caption to be placed after image
-                else if (line.startsWith(CAPTION_TOKEN)) {
-                    caption += ` ${line.slice(CAPTION_TOKEN.length).trim()}`;
-                    replaceAlt = true;
-                } else if (line.startsWith(CAP_TOKEN)) {
-                    caption += ` ${line.slice(CAP_TOKEN.length).trim()}`;
-                    replaceAlt = true;
-                }
-            });
-        } else {
-            // No tokens, check if alt is just the file name
-            let fileName = img.src;
-            // Remove '?' if it's present
-            const qMark = fileName.indexOf("?");
-            if (qMark > -1) {
-                fileName = fileName.slice(0, qMark);
-            }
-            if (!fileName.endsWith(alt)) {
-                // process as caption, but leave alt
-                caption = alt;
-            }
-        }
-
-        // Replace alt if necessary
-        if (replaceAlt) {
-            // Replace the img[alt] with the new value
-            img.removeAttribute("alt");
-            if (newAltValue) {
-                img.setAttribute("alt", newAltValue);
-            }
-        }
-
-        // Default to embedContainer
-        let containerToReplace = embedContainer;
-        // Check the parent. If it's a <p> with no other children
-        // than the image, switch to replacing it instead.
-        const parent = embedContainer.parentElement;
-        if (parent && parent.matches("p") && parent.children.length == 1) {
-            containerToReplace = parent;
-        }
-
-        // Create the figure and add the image
-        const figure = createEl("figure", { cls: cssClasses });
-        figure.appendChild(img);
-        // Add the caption
-        if (caption) {
-            figure.createEl("figcaption", {
-                text: caption.trim(),
-            });
-        }
-        // Set figure width if image has width
-        if (img.hasAttribute("width")) {
-            figure.style.width = img.getAttribute("width") + "px";
-        }
-
-        if (caption) {
-            // Replace with the <figure>
-            containerToReplace.replaceWith(figure);
-        } else {
-            // Add css classes to the <img>
-            img.addClasses(cssClasses);
-            // Replace with the <img>
-            containerToReplace.replaceWith(img);
         }
     }
 }
