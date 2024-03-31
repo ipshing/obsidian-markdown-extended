@@ -136,6 +136,9 @@ export default class MarkdownExtended extends Plugin {
         // Ignore empty containers
         if (!container.hasChildNodes()) return;
 
+        // Ignore dataview containers
+        if (container.find(".block-language-dataviewjs, .block-language-dataview")) return;
+
         // Render tables
         if (container.textContent.trim().startsWith(TABLE_TOKEN)) {
             renderTable(container, this, context);
