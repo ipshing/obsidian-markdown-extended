@@ -168,9 +168,9 @@ export default class MarkdownExtended extends Plugin {
         }
         // Render image attributes
         if (this.settings.renderImageProperties) {
-            // <img> tags indicate an external link. These can just be
-            // formatted in place right now.
-            container.findAll("img").forEach((img) => {
+            // <img> tags that are not in a span.internal-embed indicate an
+            // external link.These can just be formatted in place right now.
+            container.findAll("img:not(.internal-embed > img)").forEach((img) => {
                 // Format image
                 renderImageAttributes(img);
             });
