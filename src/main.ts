@@ -170,7 +170,7 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.renderImageProperties) {
             // <img> tags that are not in a span.internal-embed indicate an
             // external link.These can just be formatted in place right now.
-            container.findAll("img:not(.internal-embed > img)").forEach((img) => {
+            container.findAll("img:not(.internal-embed > img)").forEach((img: HTMLImageElement) => {
                 // Format image
                 renderImageAttributes(img);
             });
@@ -181,12 +181,10 @@ export default class MarkdownExtended extends Plugin {
             container.findAll(".internal-embed").forEach((el) => {
                 const observer = new MutationObserver((mutations, observer) => {
                     for (const mutation of mutations) {
-                        const target = mutation.target as HTMLElement;
-                        // Make sure content is either an <img> or, if
-                        // it's embedded, that it's finished loading.
-                        if (target.matches(".image-embed.is-loaded")) {
+                        // The embed content needs to be an image and loaded
+                        if (mutation.target instanceof HTMLElement && mutation.target.matches(".image-embed.is-loaded")) {
                             // Format image
-                            renderImageAttributes(target);
+                            renderImageAttributes(mutation.target.find("img") as HTMLImageElement);
                         }
                     }
                     // Clean up

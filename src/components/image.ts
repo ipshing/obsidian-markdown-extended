@@ -8,24 +8,15 @@ const CAP_TOKEN = "cap:";
  * Replaces the default image rendering functionality by extracting
  * css classes and captions from the 'alt' text of an <img> and
  * adding it to the element.
- * @param el The <img> element or HTMLElement containing the <img>.
+ * @param img The HTMLImageElement to process.
  */
-export function renderImageAttributes(el: HTMLElement) {
+export function renderImageAttributes(img: HTMLImageElement) {
     // Check for a <figure> (indicates this has already been processed)
-    if (el.hasClass("image-embed") && el.find("figure")) return;
+    if (img.parentElement.tagName == "FIGURE") return;
 
     // Get the "alt" value and parse for properties
-    const alt = el.getAttribute("alt");
+    const alt = img.getAttribute("alt");
     if (!alt) return;
-
-    // Get image
-    let img = el.querySelector("img");
-    if (!img) {
-        // check if the element itself is an <img>
-        if (el.tagName == "IMG") img = el as HTMLImageElement;
-        // otherwise return
-        else return;
-    }
 
     const cssClasses: string[] = [];
     let caption = "";
