@@ -11,6 +11,9 @@ const CAP_TOKEN = "cap:";
  * @param el The <img> element or HTMLElement containing the <img>.
  */
 export function renderImageAttributes(el: HTMLElement) {
+    // Check for a <figure> (indicates this has already been processed)
+    if (el.hasClass("image-embed") && el.find("figure")) return;
+
     // Get the "alt" value and parse for properties
     const alt = el.getAttribute("alt");
     if (!alt) return;
