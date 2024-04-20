@@ -8,7 +8,7 @@ const CAP_TOKEN = "cap:";
  * Replaces the default image rendering functionality by extracting
  * css classes and captions from the 'alt' text of an <img> and
  * adding it to the element.
- * @param el The <img> element HTMLElement containing the <img>.
+ * @param el The <img> element or HTMLElement containing the <img>.
  */
 export function renderImageAttributes(el: HTMLElement) {
     // Get the "alt" value and parse for properties
@@ -89,36 +89,21 @@ export function renderImageAttributes(el: HTMLElement) {
         }
     }
 
-    // Default to element given to this function
-    let containerToReplace = el;
-    // Check the parent. If it's a <p> with no other children
-    // than the image, switch to replacing it instead.
-    const parent = el.parentElement;
-    if (parent && parent.matches("p") && parent.children.length == 1) {
-        containerToReplace = parent;
-    }
-
-    // Create the figure and add the image
-    const figure = createEl("figure", { cls: cssClasses });
-    figure.appendChild(img);
-    // Add the caption
+    // Only create a <figure> element if there's a caption
     if (caption) {
-        figure.createEl("figcaption", {
-            text: caption.trim(),
-        });
-    }
-    // Set figure width if image has width
-    if (img.hasAttribute("width")) {
-        figure.style.width = img.getAttribute("width") + "px";
-    }
-
-    if (caption) {
-        // Replace with the <figure>
-        containerToReplace.replaceWith(figure);
+        const figure = createEl("figure", { cls: cssClasses });
+        // Insert the figure immediately after img
+        img.parentElement.insertAfter(figure, img);
+        // Move img from current parent to figure
+        figure.appendChild(img);
+        // Add the caption
+        figure.createEl("figcaption", { text: caption.trim() });
+        // Set figure width if image has width
+        if (img.hasAttribute("width")) {
+            figure.style.width = img.getAttribute("width") + "px";
+        }
     } else {
-        // Add css classes to the <img>
+        // Just add the css classes to the <img>
         img.addClasses(cssClasses);
-        // Replace with the <img>
-        containerToReplace.replaceWith(img);
     }
 }
