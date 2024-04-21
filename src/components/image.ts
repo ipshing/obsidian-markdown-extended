@@ -83,21 +83,21 @@ export function renderImageAttributes(img: HTMLImageElement) {
         }
     }
 
-    // Only create a <figure> element if there's a caption
+    // Create a figure element
+    const figure = createEl("figure");
+    // Insert the figure immediately after img
+    img.parentElement.insertAfter(figure, img);
+    // Move img from current parent to figure
+    figure.appendChild(img);
+    // Add the caption
     if (caption) {
-        const figure = createEl("figure", { cls: cssClasses });
-        // Insert the figure immediately after img
-        img.parentElement.insertAfter(figure, img);
-        // Move img from current parent to figure
-        figure.appendChild(img);
-        // Add the caption
         figure.createEl("figcaption", { text: caption.trim() });
-        // Set figure width if image has width
-        if (img.hasAttribute("width")) {
-            figure.style.width = img.getAttribute("width") + "px";
-        }
-    } else {
-        // Just add the css classes to the <img>
-        img.addClasses(cssClasses);
+    }
+    // Set styling
+    if (cssClasses.length > 0) {
+        figure.addClasses(cssClasses);
+    }
+    if (img.hasAttribute("width")) {
+        figure.style.width = img.getAttribute("width") + "px";
     }
 }
