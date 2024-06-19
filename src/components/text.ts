@@ -18,24 +18,24 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
             // First check if there's an orphan that needs connecting
             if (orphan) {
                 // Get the index of the token
-                let i = orphan.node.textContent.indexOf(token);
+                let tokenIndex = orphan.node.textContent.indexOf(token);
                 // Create a temporary container to hold processed nodes
                 const temp = createDiv();
                 // Add the text before the token
-                temp.append(orphan.node.textContent.slice(0, i));
+                temp.append(orphan.node.textContent.slice(0, tokenIndex));
                 // Create a new element using 'tag' and add the text after the token
-                const tokenEl = temp.createEl(tag, { text: orphan.node.textContent.slice(i + token.length) });
+                const tokenEl = temp.createEl(tag, { text: orphan.node.textContent.slice(tokenIndex + token.length) });
                 // Add all nodes after orphan (but before child) to tokenEl.
                 // This automatically removes them from 'element'.
                 while (orphan.node.nextSibling && orphan.node.nextSibling != child) {
                     tokenEl.append(orphan.node.nextSibling);
                 }
                 // Get the index of the token in child
-                i = child.textContent.indexOf(token);
+                tokenIndex = child.textContent.indexOf(token);
                 // Add the text before the token to tokenEl
-                tokenEl.append(child.textContent.slice(0, i));
+                tokenEl.append(child.textContent.slice(0, tokenIndex));
                 // Add the text after the token to temp
-                temp.append(child.textContent.slice(i + token.length));
+                temp.append(child.textContent.slice(tokenIndex + token.length));
                 // Track the last child of temp
                 const last = temp.lastChild;
                 // Push everyhing from temp to after child
@@ -45,8 +45,8 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
                 element.removeChild(child);
                 // Clear orphan
                 orphan = null;
-                // Set i = the index of 'last'
-                i = element.indexOf(last);
+                // Set i = the index of 'last' (minus 1 because it will advance in the next loop)
+                i = element.indexOf(last) - 1;
                 // Loop
                 continue;
             }
