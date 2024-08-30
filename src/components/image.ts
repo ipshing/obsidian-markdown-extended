@@ -11,8 +11,8 @@ const CAP_TOKEN = "cap:";
  * @param img The HTMLImageElement to process.
  */
 export function renderImageAttributes(img: HTMLImageElement) {
-    // Check for a <figure> (indicates this has already been processed)
-    if (img.parentElement.tagName == "FIGURE") return;
+    // Check for a <figure class="mx-image"> (indicates this has already been processed)
+    if (img.closest("figure.mx-image")) return;
 
     // Get the "alt" value and parse for properties
     const alt = img.getAttribute("alt");
@@ -83,12 +83,14 @@ export function renderImageAttributes(img: HTMLImageElement) {
         }
     }
 
+    // Get span holding the image
+    const span = img.closest("span.image-embed") ?? img.parentElement;
     // Create a figure element
-    const figure = createEl("figure");
-    // Insert the figure immediately after img
-    img.parentElement.insertAfter(figure, img);
+    const figure = span.createEl("figure", { cls: "mx-image" });
+    // Create a container to hold the image
+    const container = figure.createDiv();
     // Move img from current parent to figure
-    figure.appendChild(img);
+    container.appendChild(img);
     // Add the caption
     if (caption) {
         figure.createEl("figcaption", { text: caption.trim() });

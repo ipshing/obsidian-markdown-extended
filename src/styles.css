@@ -1,4 +1,19 @@
+body {
+    --figure-caption-margin-top: var(--size-4-1);
+    --figure-caption-text-align: center;
+}
+
 .mx-settings .setting-item.is-disabled .setting-item-name,
 .mx-settings .setting-item.is-disabled .setting-item-description {
     color: var(--text-faint);
+}
+
+.mx-image {
+    display: flex;
+    flex-flow: column nowrap;
+    align-content: space-between;
+    row-gap: var(--figure-caption-margin-top);
+}
+.mx-image figcaption {
+    text-align: var(--figure-caption-text-align);
 }
