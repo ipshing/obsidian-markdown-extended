@@ -68,7 +68,7 @@ export function renderImageAttributes(img: HTMLImageElement) {
         if (qMark > -1) {
             fileName = fileName.slice(0, qMark);
         }
-        if (!fileName.endsWith(alt)) {
+        if (!fileName.toLowerCase().endsWith(alt.toLowerCase())) {
             // process as caption, but leave alt
             caption = alt;
         }
