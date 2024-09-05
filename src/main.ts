@@ -139,8 +139,9 @@ export default class MarkdownExtended extends Plugin {
         // Ignore dataview containers
         if (container.find(".block-language-dataviewjs, .block-language-dataview")) return;
 
-        // Render tables
-        if (container.textContent.trim().startsWith(TABLE_TOKEN)) {
+        // Render tables (can be stand-alone or in callouts)
+        const tableRegex = new RegExp(`^[>\\s]*${TABLE_TOKEN}`, "im");
+        if (container.textContent.trim().match(tableRegex)) {
             renderTable(container, this, context);
         }
         // Render description lists
