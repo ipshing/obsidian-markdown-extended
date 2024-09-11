@@ -11,6 +11,7 @@ import { renderImageAttributes } from "./components/image";
 interface MarkdownExtendedSettings {
     version: string;
     previousVersion: string;
+    renderEmbedProperties: boolean;
     renderImageProperties: boolean;
     renderDLists: boolean;
     renderInlineDLists: boolean;
@@ -22,6 +23,7 @@ interface MarkdownExtendedSettings {
 const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     version: "",
     previousVersion: "",
+    renderEmbedProperties: true,
     renderImageProperties: true,
     renderDLists: true,
     renderInlineDLists: true,
@@ -37,10 +39,10 @@ const SUP_TOKEN = "^";
 export default class MarkdownExtended extends Plugin {
     settings: MarkdownExtendedSettings;
     md: MarkdownIt;
-    private imageObservers: MutationObserver[];
+    private observers: MutationObserver[];
 
     async onload() {
-        this.imageObservers = [];
+        this.observers = [];
 
         // Load settings
         await this.loadSettings();
@@ -117,15 +119,15 @@ export default class MarkdownExtended extends Plugin {
     }
 
     addObserver(observer: MutationObserver) {
-        if (!this.imageObservers) {
-            this.imageObservers = [];
+        if (!this.observers) {
+            this.observers = [];
         }
-        this.imageObservers.push(observer);
+        this.observers.push(observer);
     }
     removeObserver(observer: MutationObserver) {
         observer.disconnect();
-        if (this.imageObservers) {
-            this.imageObservers.remove(observer);
+        if (this.observers) {
+            this.observers.remove(observer);
         }
     }
 
@@ -167,35 +169,55 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
             renderMarkdownToken(container, SUP_TOKEN, "sup");
         }
-        // Render image attributes
+        // Render embed attributes
+        if (this.settings.renderEmbedProperties || this.settings.renderImageProperties)
+            // Set up observers to monitor embeds so they can be
+            // formatted after the content has been loaded. Run
+            // this after all other formatting has happend in case
+            // elements were moved around during the rendering process.
+            container.findAll(".internal-embed").forEach((el) => {
+                // Create the observer and its callback
+                const observer = new MutationObserver((mutations, observer) => {
+                    // Iterate over mutations to find embeds that have been loaded
+                    for (const mutation of mutations) {
+                        // Also verify the settings
+                        if (mutation.target instanceof HTMLElement && mutation.target.matches(".image-embed.is-loaded") && this.settings.renderImageProperties) {
+                            // Format image
+                            renderImageAttributes(mutation.target.find("img") as HTMLImageElement);
+                        }
+                        if (mutation.target instanceof HTMLElement && mutation.target.matches(".markdown-embed.is-loaded") && this.settings.renderEmbedProperties) {
+                            // Check to see if the 'alt' property has been set
+                            const target = mutation.target as HTMLElement;
+                            const alt = target.getAttribute("alt");
+                            if (alt) {
+                                // Look for the .markdown-rendered div
+                                const embed = target.find("div.markdown-rendered") as HTMLDivElement;
+                                if (embed) {
+                                    // Add the alt to the 'class' attribute
+                                    embed.addClass(alt);
+                                }
+                            }
+                        }
+                    }
+                    // Clean up
+                    this.removeObserver(observer);
+                });
+                // Set to monitor the 'class' attribute
+                observer.observe(el, {
+                    attributes: true,
+                    attributeFilter: ["class"],
+                });
+                // Add to tracked observers
+                this.addObserver(observer);
+            });
+
+        // Render external image attributes
         if (this.settings.renderImageProperties) {
             // <img> tags that are not in a span.internal-embed indicate an
             // external link.These can just be formatted in place right now.
             container.findAll("img:not(.internal-embed > img)").forEach((img: HTMLImageElement) => {
                 // Format image
                 renderImageAttributes(img);
-            });
-            // Set up observers for embedded images to format them
-            // after the content has been loaded. Run this after
-            // all other formatting has happened in case image
-            // elements were moved around during the rendering process.
-            container.findAll(".internal-embed").forEach((el) => {
-                const observer = new MutationObserver((mutations, observer) => {
-                    for (const mutation of mutations) {
-                        // The embed content needs to be an image and loaded
-                        if (mutation.target instanceof HTMLElement && mutation.target.matches(".image-embed.is-loaded")) {
-                            // Format image
-                            renderImageAttributes(mutation.target.find("img") as HTMLImageElement);
-                        }
-                    }
-                    // Clean up
-                    this.removeObserver(observer);
-                });
-                observer.observe(el, {
-                    attributes: true,
-                    attributeFilter: ["class"],
-                });
-                this.addObserver(observer);
             });
         }
     }

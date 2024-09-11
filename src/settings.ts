@@ -16,6 +16,19 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
         containerEl.addClass("mx-settings");
 
         new Setting(containerEl)
+            .setName("Additional embed properties")
+            .setDesc("Add css classes to markdown embeds. Disabling this ueses the default embed rendering functionliaty.")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.renderEmbedProperties).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.renderEmbedProperties = value;
+                    await this.plugin.saveSettings();
+                    // Refresh settings view
+                    this.display();
+                })
+            );
+
+        new Setting(containerEl)
             .setName("Additional image properties")
             .setDesc("Add captions and css classes to image links for more robust styling. Disabling this uses the default embed rendering functionality.")
             .addToggle((toggle) =>
