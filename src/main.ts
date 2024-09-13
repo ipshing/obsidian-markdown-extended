@@ -193,8 +193,10 @@ export default class MarkdownExtended extends Plugin {
                                 // Look for the .markdown-rendered div
                                 const embed = target.find("div.markdown-rendered") as HTMLDivElement;
                                 if (embed) {
-                                    // Add the alt to the 'class' attribute
-                                    embed.addClass(alt);
+                                    // Split the alt on commas and spaces
+                                    const cssClasses = alt.split(/,| /).filter((str) => str);
+                                    // Add the css classes to the 'class' attribute
+                                    embed.addClasses(cssClasses);
                                 }
                             }
                         }
