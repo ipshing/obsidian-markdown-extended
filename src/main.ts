@@ -186,18 +186,14 @@ export default class MarkdownExtended extends Plugin {
                             renderImageAttributes(mutation.target.find("img") as HTMLImageElement);
                         }
                         if (mutation.target instanceof HTMLElement && mutation.target.matches(".markdown-embed.is-loaded") && this.settings.renderEmbedProperties) {
+                            const embed = mutation.target as HTMLElement;
                             // Check to see if the 'alt' property has been set
-                            const target = mutation.target as HTMLElement;
-                            const alt = target.getAttribute("alt");
+                            const alt = embed.getAttribute("alt");
                             if (alt) {
-                                // Look for the .markdown-rendered div
-                                const embed = target.find("div.markdown-rendered") as HTMLDivElement;
-                                if (embed) {
-                                    // Split the alt on commas and spaces
-                                    const cssClasses = alt.split(/,| /).filter((str) => str);
-                                    // Add the css classes to the 'class' attribute
-                                    embed.addClasses(cssClasses);
-                                }
+                                // Split the alt on commas and spaces
+                                const cssClasses = alt.split(/,| /).filter((str) => str);
+                                // Add the css classes to the 'class' attribute
+                                embed.addClasses(cssClasses);
                             }
                         }
                     }
