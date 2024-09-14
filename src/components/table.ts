@@ -16,42 +16,8 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
     // Easy mode: 'container' has only a table or starts with a table
     // (if items exist after the table, don't try to maintain them)
     if (lines[0].trim().startsWith(TABLE_TOKEN)) {
-        // Get css classes
-        const cssStr = lines[0].trim().slice(TABLE_TOKEN.length);
-        // Split by separators, remove(filter) empty entries
-        const cssClasses = cssStr.split(/;|,| /).filter((s) => s);
-
-        let firstLine = 1;
-
-        // Look for caption
-        let caption = null;
-        if (lines.length > 1 && lines[1].startsWith(CAPTION_TOKEN)) {
-            // Set caption
-            caption = lines[1].slice(CAPTION_TOKEN.length).trim();
-
-            // Adjust first table line
-            firstLine = 2;
-        }
-
-        // Rejoin the remaining lines and parse with MarkdownIt
-        const tableMd = lines.slice(firstLine).join("\n").trim();
-        // Generate table element from the markdown
-        const table = getTableFromMarkdown(tableMd, plugin, sourcePath);
+        const table = parseTable(lines, plugin, sourcePath);
         if (table) {
-            // Set the css for the table
-            table.addClasses(cssClasses);
-            if (caption) {
-                const captionEl = createEl("caption");
-                MarkdownRenderer.render(plugin.app, caption, captionEl, sourcePath, plugin);
-                const child = captionEl.firstElementChild;
-                if (child) {
-                    // Get ride of the <p> element and put its children directly in the cell
-                    if (child instanceof HTMLParagraphElement) {
-                        child.replaceWith(...child.childNodes);
-                    }
-                }
-                table.prepend(captionEl);
-            }
             // Replace all children in the container
             container.replaceChildren(table);
         }
@@ -63,67 +29,46 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
         // then create table. Iterating over all lines
         // allows finding multiple tables.
         const tables: HTMLElement[] = [];
-        let cssClasses = null;
-        let caption = null;
         let tableLines = [];
         let inTable = false;
         for (let i = 0; i < lines.length; i++) {
+            // Look for table declaration
             let regex = new RegExp(`^[>\\s]*(${TABLE_TOKEN}.*)`, "i");
             let match = lines[i].trim().match(regex);
             if (match) {
                 inTable = true;
-                // Get table delcaration
-                const tableDec = match[1];
-                // Get css classes
-                const cssStr = tableDec.trim().slice(TABLE_TOKEN.length);
-                // Split by separators, remove(filter) empty entries
-                cssClasses = cssStr.split(/;|,| /).filter((s) => s);
+                // Store table declaration
+                tableLines.push(match[1]);
+                // Check next line for caption
+                if (i < lines.length - 1) {
+                    regex = new RegExp(`^[>\\s]*(${CAPTION_TOKEN}.*)`, "i");
+                    match = lines[i + 1].trim().match(regex);
+                    if (match) {
+                        tableLines.push(match[1]);
+                        // Increment i so the line is not double-parsed
+                        i++;
+                    }
+                }
                 continue;
             }
             if (inTable) {
-                // Only check for caption if it hasn't been found yet
-                if (!caption) {
-                    regex = new RegExp(`^[>\\s]*(${CAPTION_TOKEN}.*)`);
-                    match = lines[i].trim().match(regex);
-                    if (match) {
-                        caption = match[1].slice(CAPTION_TOKEN.length).trim();
-                        continue;
-                    }
-                }
-                // Check if table row
-                match = lines[i].trim().match(/^[>\s]*(\|.*)/);
-                if (match) {
-                    tableLines.push(match[1]);
-                }
-                // No match or last line indicates to close table
-                if (!match || i == lines.length - 1) {
-                    // Join table lines to create markdown
-                    const tableMd = tableLines.join("\n").trim();
-                    // Get table element
-                    const table = getTableFromMarkdown(tableMd, plugin, sourcePath);
+                // An "empty" line or the end of the callout
+                // signify to close the table and parse it
+                if (lines[i].match(/^[>\s]*$/) || i == lines.length - 1) {
+                    // Parse table lines
+                    const table = parseTable(tableLines, plugin, sourcePath);
                     if (table) {
-                        // Set the css for the table
-                        table.addClasses(cssClasses);
-                        if (caption) {
-                            const captionEl = createEl("caption");
-                            MarkdownRenderer.render(plugin.app, caption, captionEl, sourcePath, plugin);
-                            const child = captionEl.firstElementChild;
-                            if (child) {
-                                // Get ride of the <p> element and put its children directly in the cell
-                                if (child instanceof HTMLParagraphElement) {
-                                    child.replaceWith(...child.childNodes);
-                                }
-                            }
-                            table.prepend(captionEl);
-                        }
                         // Push to tables array
                         tables.push(table);
                     }
                     // Reset all variables
-                    cssClasses = null;
-                    caption = null;
                     tableLines = [];
                     inTable = false;
+                }
+                // Otherwise, assume it's a table line and keep it
+                else {
+                    // Remove greater-than symbols
+                    tableLines.push(lines[i].replace(/^[>\s]*/, ""));
                 }
             }
         }
@@ -141,7 +86,51 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
     }
 }
 
-function getTableFromMarkdown(tableMd: string, plugin: MarkdownExtended, sourcePath: string): HTMLElement {
+function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: string): HTMLTableElement {
+    // Validate
+    if (lines.length == 0 || !lines[0].trim().startsWith(TABLE_TOKEN)) {
+        return null;
+    }
+
+    // Get css classes
+    const cssStr = lines[0].trim().slice(TABLE_TOKEN.length);
+    // Split by separators, remove(filter) empty entries
+    const cssClasses = cssStr.split(/;|,| /).filter((s) => s);
+    // Set index where table markdown begins
+    let start = 1;
+    // Look for caption
+    let caption = null;
+    if (lines.length > 1 && lines[1].startsWith(CAPTION_TOKEN)) {
+        // Set caption
+        caption = lines[1].slice(CAPTION_TOKEN.length).trim();
+        // Adjust first table line
+        start = 2;
+    }
+    // Rejoin the remaining lines and parse with MarkdownIt
+    const tableMd = lines.slice(start).join("\n").trim();
+    // Generate table element from the markdown
+    const table = convertMarkdownToHtml(tableMd, plugin, sourcePath);
+    // Validate
+    if (!table) return null;
+    // Set the css for the table
+    table.addClasses(cssClasses);
+    if (caption) {
+        const captionEl = createEl("caption");
+        MarkdownRenderer.render(plugin.app, caption, captionEl, sourcePath, plugin);
+        const child = captionEl.firstElementChild;
+        if (child) {
+            // Get ride of the <p> element and put its children directly in the cell
+            if (child instanceof HTMLParagraphElement) {
+                child.replaceWith(...child.childNodes);
+            }
+        }
+        table.prepend(captionEl);
+    }
+
+    return table;
+}
+
+function convertMarkdownToHtml(tableMd: string, plugin: MarkdownExtended, sourcePath: string): HTMLTableElement {
     // Tokenize the table markdown, then process the tokens
     // to get the only the text within the cells
     const tokens = plugin.md.parse(tableMd, {}),
@@ -188,7 +177,7 @@ function getTableFromMarkdown(tableMd: string, plugin: MarkdownExtended, sourceP
     }
 
     // return the table element
-    return temp.find("table");
+    return temp.find("table") as HTMLTableElement;
 }
 
 const elsToPreserveText = ["td", "th", "caption"];
