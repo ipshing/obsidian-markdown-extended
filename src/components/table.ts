@@ -106,8 +106,13 @@ function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: strin
         // Adjust first table line
         start = 2;
     }
+    // Mark end of table body
+    let end = start;
+    while (end < lines.length && lines[end].match(/^\s*\|/)) {
+        end++;
+    }
     // Rejoin the remaining lines and parse with MarkdownIt
-    const tableMd = lines.slice(start).join("\n").trim();
+    const tableMd = lines.slice(start, end).join("\n").trim();
     // Generate table element from the markdown
     const table = convertMarkdownToHtml(tableMd, plugin, sourcePath);
     // Validate
@@ -126,7 +131,38 @@ function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: strin
         }
         table.prepend(captionEl);
     }
-
+    // Assume any lines after the table body belong in the footer
+    if (end < lines.length) {
+        const footer = table.createEl("tfoot");
+        // Add remaining lines as table footer rows
+        for (end; end < lines.length; end++) {
+            // Add a '|' to the front
+            const line = "| " + lines[end];
+            // Get number of pipe symbols to create fake header row
+            const pipes = line.match(/\|/g) || [];
+            // Create header/divider rows
+            let header = "|";
+            let divider = "|";
+            for (let i = 1; i < pipes.length; i++) {
+                // It doesn't actually matter what the content
+                // is, as long as it's valid as a header and
+                // divider row.
+                header += ` Column ${i} |`;
+                divider += " --- |";
+            }
+            // Combine into md
+            const md = `${header}\n${divider}\n${line}`;
+            const tempTable = convertMarkdownToHtml(md, plugin, sourcePath);
+            if (tempTable) {
+                // There should only be one tbody row, so just get the first one
+                const row = tempTable.find("tbody > tr");
+                if (row) {
+                    // Append row to footer
+                    footer.append(row);
+                }
+            }
+        }
+    }
     return table;
 }
 
