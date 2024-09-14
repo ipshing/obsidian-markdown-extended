@@ -52,9 +52,13 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
                 continue;
             }
             if (inTable) {
-                // An "empty" line or the end of the callout
-                // signify to close the table and parse it
-                if (lines[i].match(/^[>\s]*$/) || i == lines.length - 1) {
+                // Add the lines to the array, but first
+                // remove leading greater-than symbols
+                tableLines.push(lines[i].replace(/^[>\s]*/, ""));
+                // Look ahead to the next line. If it's "empty"
+                // or there are no more lines, close the table
+                // and parse it.
+                if (i + 1 == lines.length || lines[i + 1].match(/^[>\s]*$/)) {
                     // Parse table lines
                     const table = parseTable(tableLines, plugin, sourcePath);
                     if (table) {
@@ -64,11 +68,6 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
                     // Reset all variables
                     tableLines = [];
                     inTable = false;
-                }
-                // Otherwise, assume it's a table line and keep it
-                else {
-                    // Remove greater-than symbols
-                    tableLines.push(lines[i].replace(/^[>\s]*/, ""));
                 }
             }
         }
