@@ -113,5 +113,18 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
                     this.display();
                 })
             );
+
+        new Setting(containerEl)
+            .setName("Inline code: show copy button")
+            .setDesc("Show the copy button in inline code blocks. (Requires restart of Obsidian.)")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.inlineShowCopyButton).onChange(async (value) => {
+                    // Update settings
+                    this.plugin.settings.inlineShowCopyButton = value;
+                    await this.plugin.saveSettings();
+                    //Refresh settings view
+                    this.display();
+                })
+            );
     }
 }

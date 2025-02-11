@@ -1,4 +1,4 @@
-import { MarkdownPostProcessorContext, Plugin } from "obsidian";
+import { MarkdownPostProcessorContext, Plugin, setIcon } from "obsidian";
 import { valid, lt } from "semver";
 import { MarkdownExtendedSettingsTab } from "./settings";
 import { renderMarkdownToken, toggleToken } from "./components/text";
@@ -18,6 +18,7 @@ interface MarkdownExtendedSettings {
     renderInlineQuotes: boolean;
     renderSubscript: boolean;
     renderSuperscript: boolean;
+    inlineShowCopyButton: boolean;
 }
 
 const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
@@ -30,6 +31,7 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     renderInlineQuotes: true,
     renderSubscript: true,
     renderSuperscript: true,
+    inlineShowCopyButton: true,
 };
 
 const QUOTE_TOKEN = '""';
@@ -169,8 +171,46 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
             renderMarkdownToken(container, SUP_TOKEN, "sup");
         }
+        // Inline code
+        if (this.settings.inlineShowCopyButton && container.find("code")) {
+            const codes = container.findAll("code");
+            for (const code of codes) {
+                if (code.parentElement.nodeName !== "PRE") {
+                    // Add class
+                    code.addClass("mx-code");
+                    // Create button
+                    const button = code.createEl("button", { cls: "copy-code-button mx-copy-code-button" });
+                    // Set icon
+                    setIcon(button, "lucide-copy");
+                    // Save text
+                    const textToCopy = code.textContent;
+                    // Add click event handler
+                    button.onclick = (event) => {
+                        if (textToCopy) {
+                            event.stopPropagation();
+                            // Copy text to clipboard
+                            navigator.clipboard.writeText(textToCopy);
+                            // Set icon and style
+                            setIcon(button, "lucide-check");
+                            button.setCssStyles({
+                                color: "var(--text-success)",
+                                display: "inline-flex",
+                            });
+                            setTimeout(() => {
+                                // change icon and style back
+                                setIcon(button, "lucide-copy");
+                                button.setCssStyles({
+                                    color: "",
+                                    display: "",
+                                });
+                            }, 1000);
+                        }
+                    };
+                }
+            }
+        }
         // Render embed attributes
-        if (this.settings.renderEmbedProperties || this.settings.renderImageProperties)
+        if (this.settings.renderEmbedProperties || this.settings.renderImageProperties) {
             // Set up observers to monitor embeds so they can be
             // formatted after the content has been loaded. Run
             // this after all other formatting has happend in case
@@ -208,6 +248,7 @@ export default class MarkdownExtended extends Plugin {
                 // Add to tracked observers
                 this.addObserver(observer);
             });
+        }
 
         // Render external image attributes
         if (this.settings.renderImageProperties) {

@@ -8,6 +8,15 @@ body {
     color: var(--text-faint);
 }
 
+.markdown-preview-view .mx-code {
+    position: relative;
+    padding-right: var(--size-4-8);
+}
+.markdown-rendered .mx-code button.copy-code-button {
+    margin: 0;
+    padding: 3px 6px;
+}
+
 .mx-image {
     display: flex;
     flex-flow: column nowrap;
