@@ -140,8 +140,8 @@ export default class MarkdownExtended extends Plugin {
         // Ignore empty containers
         if (!container.hasChildNodes()) return;
 
-        // Ignore dataview containers
-        if (container.find(".block-language-dataviewjs, .block-language-dataview")) return;
+        // Check if contains dataview
+        const hasDv = container.find(".block-language-dataviewjs, .block-language-dataview");
 
         // Render tables (can be stand-alone or in callouts)
         const tableRegex = new RegExp(`^[>\\s]*${TABLE_TOKEN}`, "im");
@@ -149,11 +149,11 @@ export default class MarkdownExtended extends Plugin {
             renderTable(container, this, context);
         }
         // Render description lists
-        if (this.settings.renderDLists && container.textContent.match(DLIST_REGEX)) {
+        if (this.settings.renderDLists && container.textContent.match(DLIST_REGEX) && !hasDv) {
             renderDescriptionList(container);
         }
         // Render inline description lists
-        if (this.settings.renderDLists && this.settings.renderInlineDLists && container.textContent.match(DLIST_INLINE_REGEX)) {
+        if (this.settings.renderDLists && this.settings.renderInlineDLists && container.textContent.match(DLIST_INLINE_REGEX) && !hasDv) {
             renderInlineDescriptionList(container);
         }
         // Render inline quotations
