@@ -175,7 +175,9 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.inlineShowCopyButton && container.find("code")) {
             const codes = container.findAll("code");
             for (const code of codes) {
-                if (code.parentElement.nodeName !== "PRE") {
+                if (code.parentElement.nodeName !== "PRE" && code.textContent.startsWith("^")) {
+                    // Remove the leading carat without disturbing any inner elements
+                    code.innerText = code.innerText.slice(1);
                     // Add class
                     code.addClass("mx-code");
                     // Create button
