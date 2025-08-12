@@ -17,6 +17,7 @@ body {
     padding: 3px 6px;
     /* ensures button sits aligned correctly if inline code is multi-line */
     bottom: 0;
+    top: unset; /* override the default behavior */
 }
 
 .mx-image {
