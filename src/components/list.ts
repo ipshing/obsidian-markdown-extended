@@ -10,8 +10,8 @@ export function renderDescriptionList(container: HTMLElement) {
         // Skip paragraphs that don't have the token
         if (!paragraph.textContent.match(DLIST_REGEX)) continue;
 
-        // Get the parent of 'paragraph'
-        const parent = paragraph.parentElement;
+        // Create a temporary container to hold all the lists
+        const lists = createDiv();
         // Set up lastEl as a reference for where to insert new elements
         let lastEl = paragraph;
         // Delcare the description list elements outside of the loop
@@ -43,7 +43,7 @@ export function renderDescriptionList(container: HTMLElement) {
                     continue;
                 }
                 // If there are no more details, push the current list
-                parent.insertAfter(dl, lastEl);
+                lists.insertAfter(dl, lastEl);
                 lastEl = dl;
                 // Reset the list so it doesn't get caught after
                 // processing the paragraph.
@@ -63,7 +63,7 @@ export function renderDescriptionList(container: HTMLElement) {
                 while (child.nextSibling) {
                     temp.append(child.nextSibling);
                 }
-                parent.insertAfter(temp, lastEl);
+                lists.insertAfter(temp, lastEl);
                 lastEl = temp;
                 // Finally, remove this <br>
                 paragraph.removeChild(child);
@@ -92,11 +92,11 @@ export function renderDescriptionList(container: HTMLElement) {
 
         // If there is a list, push it
         if (dl) {
-            parent.insertAfter(dl, lastEl);
+            lists.insertAfter(dl, lastEl);
             lastEl = dl;
         }
-        // Finally, remove paragraph
-        parent.removeChild(paragraph);
+        // Finally, push all lists back into the paragraph node
+        paragraph.append(...lists.childNodes);
     }
 }
 
@@ -107,8 +107,8 @@ export function renderInlineDescriptionList(container: HTMLElement) {
         // Skip paragraphs that don't have the token
         if (!paragraph.textContent.contains(DLIST_INLINE_TOKEN)) continue;
 
-        // Get the parent of 'paragraph'
-        const parent = paragraph.parentElement;
+        // Create a temporary container to hold all the lists
+        const list = createDiv();
         // Set up lastEl as a reference for where to insert new elements
         let lastEl = paragraph;
         // Set up a temp paragraph to hold nodes while iterating
@@ -140,7 +140,7 @@ export function renderInlineDescriptionList(container: HTMLElement) {
                     }
                     if (!moreItems) {
                         // No subsequent items, push list
-                        parent.insertAfter(dl, lastEl);
+                        list.insertAfter(dl, lastEl);
                         lastEl = dl;
                         // Reset the list
                         dl = null;
@@ -176,7 +176,7 @@ export function renderInlineDescriptionList(container: HTMLElement) {
                     while (temp.lastChild && temp.lastChild.nodeName == "BR") temp.removeChild(temp.lastChild);
                     // If there are still nodes left, push temp
                     if (temp.hasChildNodes()) {
-                        parent.insertAfter(temp, lastEl);
+                        list.insertAfter(temp, lastEl);
                         lastEl = temp;
                     }
                     // Reset lastBR
@@ -220,7 +220,7 @@ export function renderInlineDescriptionList(container: HTMLElement) {
 
         // If there is a list, push it
         if (dl) {
-            parent.insertAfter(dl, lastEl);
+            list.insertAfter(dl, lastEl);
             lastEl = dl;
         }
         // If there is anything left in temp, push it
@@ -230,10 +230,10 @@ export function renderInlineDescriptionList(container: HTMLElement) {
             while (temp.lastChild && temp.lastChild.nodeName == "BR") temp.removeChild(temp.lastChild);
             // If there are still nodes left, push temp
             if (temp.hasChildNodes()) {
-                parent.insertAfter(temp, lastEl);
+                list.insertAfter(temp, lastEl);
             }
         }
-        // Finally, remove paragraph
-        parent.removeChild(paragraph);
+        // Finally, push all lists back into the paragraph node
+        paragraph.append(...list.childNodes);
     }
 }
