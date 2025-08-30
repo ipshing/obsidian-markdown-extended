@@ -118,6 +118,10 @@ function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: strin
     if (!table) return null;
     // Set the css for the table
     table.addClasses(cssClasses);
+    // Check table header
+    if (!table.find("thead")) {
+        table.addClass("no-header");
+    }
     if (caption) {
         const captionEl = createEl("caption");
         MarkdownRenderer.render(plugin.app, caption, captionEl, sourcePath, plugin);
@@ -161,6 +165,8 @@ function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: strin
                 }
             }
         }
+    } else {
+        table.addClass("no-footer");
     }
     return table;
 }
