@@ -3,6 +3,7 @@ const CLS_TOKEN = "cls:";
 const ALT_TOKEN = "alt:";
 const CAPTION_TOKEN = "caption:";
 const CAP_TOKEN = "cap:";
+const TITLE_TOKEN = "title:";
 
 /**
  * Replaces the default image rendering functionality by extracting
@@ -20,10 +21,11 @@ export function renderImageAttributes(img: HTMLImageElement) {
 
     const cssClasses: string[] = [];
     let caption = "";
+    let title = "";
     let newAltValue = "";
     let replaceAlt = false;
 
-    if (alt.contains(CSS_TOKEN) || alt.contains(CLS_TOKEN) || alt.contains(ALT_TOKEN) || alt.contains(CAPTION_TOKEN) || alt.contains(CAP_TOKEN)) {
+    if (alt.contains(CSS_TOKEN) || alt.contains(CLS_TOKEN) || alt.contains(ALT_TOKEN) || alt.contains(CAPTION_TOKEN) || alt.contains(CAP_TOKEN) || alt.contains(TITLE_TOKEN)) {
         // Split using a semi-colon, trim, then filter out empty entries
         const altLines = alt
             .split(";")
@@ -38,7 +40,9 @@ export function renderImageAttributes(img: HTMLImageElement) {
                     cssClasses.push(...cssClassStr.split(/,| /).filter((s) => s));
                     replaceAlt = true;
                 }
-            } else if (line.startsWith(CLS_TOKEN)) {
+            }
+            // Alternate css token
+            else if (line.startsWith(CLS_TOKEN)) {
                 const cssClassStr = line.slice(CLS_TOKEN.length).trim();
                 // Parse into array of classes
                 if (cssClassStr) {
@@ -55,8 +59,15 @@ export function renderImageAttributes(img: HTMLImageElement) {
             else if (line.startsWith(CAPTION_TOKEN)) {
                 caption += ` ${line.slice(CAPTION_TOKEN.length).trim()}`;
                 replaceAlt = true;
-            } else if (line.startsWith(CAP_TOKEN)) {
+            }
+            // Alternate caption token
+            else if (line.startsWith(CAP_TOKEN)) {
                 caption += ` ${line.slice(CAP_TOKEN.length).trim()}`;
+                replaceAlt = true;
+            }
+            // Look for title to show when hovering over image
+            else if (line.startsWith(TITLE_TOKEN)) {
+                title += ` ${line.slice(TITLE_TOKEN.length).trim()}`;
                 replaceAlt = true;
             }
         });
@@ -94,6 +105,10 @@ export function renderImageAttributes(img: HTMLImageElement) {
     // Add the caption
     if (caption) {
         figure.createEl("figcaption", { text: caption.trim() });
+    }
+    // Add title to image only
+    if (title) {
+        img.setAttr("title", title);
     }
     // Set styling
     if (cssClasses.length > 0) {
