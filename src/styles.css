@@ -8,16 +8,25 @@ body {
     color: var(--text-faint);
 }
 
-.markdown-preview-view .mx-code {
-    position: relative;
-    padding-right: var(--size-4-8);
-}
-.markdown-rendered .mx-code button.copy-code-button {
+.markdown-rendered button.mx-copy-button {
+    /* borrow styles from Obsidian's button.copy-code-button */
+    height: auto;
+    background-color: transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    font-family: var(--font-interface);
+    inset-inline-end: 0;
+    /* but make some customizations */
     margin: 0;
     padding: 3px 6px;
-    /* ensures button sits aligned correctly if inline code is multi-line */
-    bottom: 0;
-    top: unset; /* override the default behavior */
+}
+.markdown-rendered button.mx-copy-button:hover {
+    background-color: var(--background-modifier-hover);
+}
+/* adjustments for when button is in an inline code block */
+.markdown-rendered .mx-code:has(> button.mx-copy-button) {
+    display: inline-flex;
 }
 
 .mx-image {
