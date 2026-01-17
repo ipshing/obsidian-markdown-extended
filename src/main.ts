@@ -181,7 +181,7 @@ export default class MarkdownExtended extends Plugin {
                     // Add class
                     code.addClass("mx-code");
                     // Create button
-                    const button = code.createEl("button", { cls: "copy-code-button mx-copy-code-button" });
+                    const button = code.createEl("button", { cls: "copy-code-button mx-copy-button" });
                     // Set icon
                     setIcon(button, "lucide-copy");
                     // Save text
