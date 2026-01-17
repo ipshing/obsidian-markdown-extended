@@ -27,6 +27,8 @@ body {
 /* adjustments for when button is in an inline code block */
 .markdown-rendered .mx-code:has(> button.mx-copy-button) {
     display: inline-flex;
+    gap: 2px;
+    padding-right: 2px;
 }
 
 .mx-image {
