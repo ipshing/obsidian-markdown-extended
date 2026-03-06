@@ -8,7 +8,7 @@ body {
     color: var(--text-faint);
 }
 
-.markdown-rendered button.mx-copy-button {
+button.mx-copy-button {
     /* borrow styles from Obsidian's button.copy-code-button */
     height: auto;
     background-color: transparent;
@@ -17,21 +17,25 @@ body {
     font-size: var(--font-ui-smaller);
     font-family: var(--font-interface);
     inset-inline-end: 0;
-    /* but make some customizations */
-    margin: 0;
-    padding: 3px 6px;
+    padding: 6px 8px;
 }
-.markdown-rendered button.mx-copy-button:hover {
+button.mx-copy-button:hover {
     background-color: var(--background-modifier-hover);
 }
 /* adjustments for when button is in an inline code block */
-.markdown-rendered .mx-code:has(> button.mx-copy-button) {
+.mx-code:has(> button.mx-copy-button) {
     display: inline-flex;
-    gap: 2px;
-    padding-right: 2px;
+    align-items: center;
+    gap: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 /* "hidden" code blocks */
-.markdown-rendered .mx-code.hidden > span {
+.mx-code.hidden {
+    padding: 0px;
+}
+.mx-code.hidden > span {
     display: none;
 }
 
