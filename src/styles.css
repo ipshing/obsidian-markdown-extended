@@ -17,7 +17,7 @@ button.mx-copy-button {
     font-size: var(--font-ui-smaller);
     font-family: var(--font-interface);
     inset-inline-end: 0;
-    padding: 6px 8px;
+    padding: 4px 6px;
 }
 button.mx-copy-button:hover {
     background-color: var(--background-modifier-hover);
