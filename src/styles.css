@@ -31,11 +31,11 @@ button.mx-copy-button:hover {
     padding-top: 0;
     padding-bottom: 0;
 }
-/* "hidden" code blocks */
-.mx-code.hidden {
+/* obscured code blocks */
+.mx-code.obscured {
     padding: 0px;
 }
-.mx-code.hidden > span {
+.mx-code.obscured > span {
     display: none;
 }
 

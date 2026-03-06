@@ -140,7 +140,7 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
                 setting
                     .setName("Copy token")
                     .setDesc(
-                        "Used to identify which inline code blocks to add a copy button to. Can be any string of standard characters (case-sensitive). White spaces will be ignored. Leave empty to use default.",
+                        "When used at the beginning of an inline code block, a copy button will be added to copy the text in the block to the clipboard. Can be any string of standard characters (case-sensitive). White spaces will be ignored. Leave empty to use default.",
                     )
                     .setDisabled(!this.plugin.settings.showCopyButton)
                     .addText((text) => {
@@ -155,18 +155,18 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
             })
             .addSetting((setting) => {
                 setting
-                    .setName("Hidden copy tokn")
+                    .setName("Obscure token")
                     .setDesc(
-                        "Used to hide the text inside the inline code block and show only the copy button. Can be any string of standard characters (case-sensitive). White spaces will be ignored. Leave empty to use default.",
+                        "When used at the start of an inline code block, the text will be hidden and only a copy button will be shown. Can be any string of standard characters (case-sensitive). White spaces will be gnored. Leave empty to use default.",
                     )
                     .setDisabled(!this.plugin.settings.showCopyButton)
                     .addText((text) => {
-                        text.setValue(this.plugin.settings.hiddenToken);
+                        text.setValue(this.plugin.settings.obscureToken);
                         text.setDisabled(!this.plugin.settings.showCopyButton);
                         text.setPlaceholder("^?");
                         text.onChange(async (value) => {
                             // Update settings
-                            await this.plugin.updateSettings({ hiddenToken: value });
+                            await this.plugin.updateSettings({ obscureToken: value });
                         });
                     });
             });

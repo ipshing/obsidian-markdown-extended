@@ -20,7 +20,7 @@ interface MarkdownExtendedSettings {
     renderSuperscript: boolean;
     showCopyButton: boolean;
     copyToken: string;
-    hiddenToken: string;
+    obscureToken: string;
 }
 
 const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
@@ -35,14 +35,14 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     renderSuperscript: true,
     showCopyButton: true,
     copyToken: "",
-    hiddenToken: "",
+    obscureToken: "",
 };
 
 const QUOTE_TOKEN = '""';
 const SUB_TOKEN = "~";
 const SUP_TOKEN = "^";
 const COPY_TOKEN = "^";
-const HIDDEN_TOKEN = "^?";
+const OBSCURE_TOKEN = "^?";
 
 export default class MarkdownExtended extends Plugin {
     settings: MarkdownExtendedSettings;
@@ -194,18 +194,18 @@ export default class MarkdownExtended extends Plugin {
                 if (copyToken.length == 0) {
                     copyToken = COPY_TOKEN;
                 }
-                let hiddenToken = this.settings.hiddenToken.replace(/\s/g, "");
-                if (hiddenToken.length == 0) {
-                    hiddenToken = HIDDEN_TOKEN;
+                let hideToken = this.settings.obscureToken.replace(/\s/g, "");
+                if (hideToken.length == 0) {
+                    hideToken = OBSCURE_TOKEN;
                 }
                 // Check if either condition is met (hiddenToken implies copy button)
-                const showCopy = code.textContent.startsWith(copyToken) || code.textContent.startsWith(hiddenToken);
-                const hide = code.textContent.startsWith(hiddenToken);
+                const showCopy = code.textContent.startsWith(copyToken) || code.textContent.startsWith(hideToken);
+                const hide = code.textContent.startsWith(hideToken);
                 // Skip if neither condition is met
                 if (!showCopy && !hide) continue;
                 // Remove the leading token without disturbing any inner elements
                 if (hide) {
-                    code.innerText = code.innerText.slice(hiddenToken.length);
+                    code.innerText = code.innerText.slice(hideToken.length);
                 } else {
                     code.innerText = code.innerText.slice(copyToken.length);
                 }
@@ -213,7 +213,7 @@ export default class MarkdownExtended extends Plugin {
                 code.addClass("mx-code");
                 if (hide) {
                     // add extra class
-                    code.addClass("hidden");
+                    code.addClass("obscured");
                     // move text to inner container
                     const span = createEl("span");
                     span.append(...code.childNodes);
