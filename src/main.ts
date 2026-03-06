@@ -19,6 +19,8 @@ interface MarkdownExtendedSettings {
     renderSubscript: boolean;
     renderSuperscript: boolean;
     showCopyButton: boolean;
+    copyToken: string;
+    hiddenToken: string;
 }
 
 const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
@@ -32,11 +34,15 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     renderSubscript: true,
     renderSuperscript: true,
     showCopyButton: true,
+    copyToken: "",
+    hiddenToken: "",
 };
 
 const QUOTE_TOKEN = '""';
 const SUB_TOKEN = "~";
 const SUP_TOKEN = "^";
+const COPY_TOKEN = "^";
+const HIDDEN_TOKEN = "^?";
 
 export default class MarkdownExtended extends Plugin {
     settings: MarkdownExtendedSettings;
@@ -180,40 +186,67 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.showCopyButton && container.find("code")) {
             const codes = container.findAll("code");
             for (const code of codes) {
-                if (code.parentElement.nodeName !== "PRE" && code.textContent.startsWith("^")) {
-                    // Remove the leading carat without disturbing any inner elements
-                    code.innerText = code.innerText.slice(1);
-                    // Add class
-                    code.addClass("mx-code");
-                    // Create button
-                    const button = code.createEl("button", { cls: "mx-copy-button" });
-                    // Set icon
-                    setIcon(button, "lucide-copy");
-                    // Save text
-                    const textToCopy = code.textContent;
-                    // Add click event handler
-                    button.onclick = (event) => {
-                        if (textToCopy) {
-                            event.stopPropagation();
-                            // Copy text to clipboard
-                            navigator.clipboard.writeText(textToCopy);
-                            // Set icon and style
-                            setIcon(button, "lucide-check");
-                            button.setCssStyles({
-                                color: "var(--text-success)",
-                                display: "inline-flex",
-                            });
-                            setTimeout(() => {
-                                // change icon and style back
-                                setIcon(button, "lucide-copy");
-                                button.setCssStyles({
-                                    color: "",
-                                    display: "",
-                                });
-                            }, 1000);
-                        }
-                    };
+                // Ignore if in a <pre> element (indicated code block)
+                if (code.parentElement.nodeName == "PRE") continue;
+
+                // Parse tokens from settings
+                let copyToken = this.settings.copyToken.replace(/\s/g, "");
+                if (copyToken.length == 0) {
+                    copyToken = COPY_TOKEN;
                 }
+                let hiddenToken = this.settings.hiddenToken.replace(/\s/g, "");
+                if (hiddenToken.length == 0) {
+                    hiddenToken = HIDDEN_TOKEN;
+                }
+                // Check if either condition is met (hiddenToken implies copy button)
+                const showCopy = code.textContent.startsWith(copyToken) || code.textContent.startsWith(hiddenToken);
+                const hide = code.textContent.startsWith(hiddenToken);
+                // Skip if neither condition is met
+                if (!showCopy && !hide) continue;
+                // Remove the leading token without disturbing any inner elements
+                if (hide) {
+                    code.innerText = code.innerText.slice(hiddenToken.length);
+                } else {
+                    code.innerText = code.innerText.slice(copyToken.length);
+                }
+                // Add class
+                code.addClass("mx-code");
+                if (hide) {
+                    // add extra class
+                    code.addClass("hidden");
+                    // move text to inner container
+                    const span = createEl("span");
+                    span.append(...code.childNodes);
+                    code.append(span);
+                }
+                // Create button
+                const button = code.createEl("button", { cls: "mx-copy-button" });
+                // Set icon
+                setIcon(button, "lucide-copy");
+                // Save text
+                const textToCopy = code.textContent;
+                // Add click event handler
+                button.onclick = (event) => {
+                    if (textToCopy) {
+                        event.stopPropagation();
+                        // Copy text to clipboard
+                        navigator.clipboard.writeText(textToCopy);
+                        // Set icon and style
+                        setIcon(button, "lucide-check");
+                        button.setCssStyles({
+                            color: "var(--text-success)",
+                            display: "inline-flex",
+                        });
+                        setTimeout(() => {
+                            // change icon and style back
+                            setIcon(button, "lucide-copy");
+                            button.setCssStyles({
+                                color: "",
+                                display: "",
+                            });
+                        }, 1000);
+                    }
+                };
             }
         }
         // Render embed attributes

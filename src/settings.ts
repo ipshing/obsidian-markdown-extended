@@ -121,18 +121,54 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
                     );
             });
 
-        new SettingGroup(containerEl).setHeading("Inline Code").addSetting((setting) => {
-            setting
-                .setName("Show copy button")
-                .setDesc("Show the copy button in inline code blocks. (Requires restart of Obsidian.)")
-                .addToggle((toggle) =>
-                    toggle.setValue(this.plugin.settings.showCopyButton).onChange(async (value) => {
-                        // Update settings
-                        await this.plugin.updateSettings({ showCopyButton: value });
-                        //Refresh settings view
-                        this.display();
-                    }),
-                );
-        });
+        new SettingGroup(containerEl)
+            .setHeading("Inline Code")
+            .addSetting((setting) => {
+                setting
+                    .setName("Show copy button")
+                    .setDesc("Show the copy button in inline code blocks. (Requires restart of Obsidian.)")
+                    .addToggle((toggle) =>
+                        toggle.setValue(this.plugin.settings.showCopyButton).onChange(async (value) => {
+                            // Update settings
+                            await this.plugin.updateSettings({ showCopyButton: value });
+                            //Refresh settings view
+                            this.display();
+                        }),
+                    );
+            })
+            .addSetting((setting) => {
+                setting
+                    .setName("Copy token")
+                    .setDesc(
+                        "Used to identify which inline code blocks to add a copy button to. Can be any string of standard characters (case-sensitive). White spaces will be ignored. Leave empty to use default.",
+                    )
+                    .setDisabled(!this.plugin.settings.showCopyButton)
+                    .addText((text) => {
+                        text.setValue(this.plugin.settings.copyToken);
+                        text.setDisabled(!this.plugin.settings.showCopyButton);
+                        text.setPlaceholder("^");
+                        text.onChange(async (value) => {
+                            // Update settings
+                            await this.plugin.updateSettings({ copyToken: value });
+                        });
+                    });
+            })
+            .addSetting((setting) => {
+                setting
+                    .setName("Hidden copy tokn")
+                    .setDesc(
+                        "Used to hide the text inside the inline code block and show only the copy button. Can be any string of standard characters (case-sensitive). White spaces will be ignored. Leave empty to use default.",
+                    )
+                    .setDisabled(!this.plugin.settings.showCopyButton)
+                    .addText((text) => {
+                        text.setValue(this.plugin.settings.hiddenToken);
+                        text.setDisabled(!this.plugin.settings.showCopyButton);
+                        text.setPlaceholder("^?");
+                        text.onChange(async (value) => {
+                            // Update settings
+                            await this.plugin.updateSettings({ hiddenToken: value });
+                        });
+                    });
+            });
     }
 }

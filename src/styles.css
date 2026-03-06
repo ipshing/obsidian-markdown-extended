@@ -30,6 +30,10 @@ body {
     gap: 2px;
     padding-right: 2px;
 }
+/* "hidden" code blocks */
+.markdown-rendered .mx-code.hidden > span {
+    display: none;
+}
 
 .mx-image {
     display: flex;
