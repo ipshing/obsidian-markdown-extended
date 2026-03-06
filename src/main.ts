@@ -18,7 +18,7 @@ interface MarkdownExtendedSettings {
     renderInlineQuotes: boolean;
     renderSubscript: boolean;
     renderSuperscript: boolean;
-    inlineShowCopyButton: boolean;
+    showCopyButton: boolean;
 }
 
 const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     renderInlineQuotes: true,
     renderSubscript: true,
     renderSuperscript: true,
-    inlineShowCopyButton: true,
+    showCopyButton: true,
 };
 
 const QUOTE_TOKEN = '""';
@@ -107,6 +107,11 @@ export default class MarkdownExtended extends Plugin {
         await this.saveData(this.settings);
     }
 
+    async updateSettings(settings: Partial<MarkdownExtendedSettings>) {
+        Object.assign(this.settings, settings);
+        await this.saveData(this.settings);
+    }
+
     async runVersionCheck() {
         // Check previous version
         if (!valid(this.settings.version)) this.settings.version = "0.1.0";
@@ -172,7 +177,7 @@ export default class MarkdownExtended extends Plugin {
             renderMarkdownToken(container, SUP_TOKEN, "sup");
         }
         // Inline code
-        if (this.settings.inlineShowCopyButton && container.find("code")) {
+        if (this.settings.showCopyButton && container.find("code")) {
             const codes = container.findAll("code");
             for (const code of codes) {
                 if (code.parentElement.nodeName !== "PRE" && code.textContent.startsWith("^")) {
