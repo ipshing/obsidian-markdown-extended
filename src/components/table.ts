@@ -7,10 +7,11 @@ export const CAPTION_TOKEN = "caption:";
 export const MARKDOWN_IT_OPTIONS = { html: true };
 
 export function renderTable(container: HTMLElement, plugin: MarkdownExtended, context: MarkdownPostProcessorContext) {
-    const sourcePath = typeof context == "string" ? context : context?.sourcePath ?? this.app.workspace.getActiveFile()?.path ?? "";
+    const sourcePath = typeof context == "string" ? context : (context?.sourcePath ?? plugin.app.workspace.getActiveFile()?.path ?? "");
 
     // Get the markdown and split into lines
     const src = getSourceMarkdown(container, context);
+    if (!src) return;
     const lines = src.split("\n");
 
     // Easy mode: 'container' has only a table or starts with a table
@@ -78,17 +79,19 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
             if (p.textContent.trim().match(/^[>\s]*--mx-table/i)) {
                 // Get next table from array
                 const table = tables.shift();
-                // Replace paragraph with table
-                p.replaceWith(table);
+                if (table) {
+                    // Replace paragraph with table
+                    p.replaceWith(table);
+                }
             }
         });
     }
 }
 
-function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: string): HTMLTableElement {
+function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: string): HTMLTableElement | undefined {
     // Validate
     if (lines.length == 0 || !lines[0].trim().startsWith(TABLE_TOKEN)) {
-        return null;
+        return undefined;
     }
 
     // Get css classes
@@ -115,8 +118,10 @@ function parseTable(lines: string[], plugin: MarkdownExtended, sourcePath: strin
     // Generate table element from the markdown
     const table = convertMarkdownToHtml(tableMd, plugin, sourcePath);
     // Validate
-    if (!table) return null;
-    // Set the css for the table
+    if (!table) return undefined;
+    // Set default class
+    table.addClass("mx-table");
+    // Add custom classes declared in markdown
     table.addClasses(cssClasses);
     // Check table header
     if (!table.find("thead")) {
@@ -266,7 +271,7 @@ function processTokens(tokens: Token[]): string[] {
     return srcMarkdown;
 }
 
-function getSourceMarkdown(el: HTMLElement, context: MarkdownPostProcessorContext): string | null {
+function getSourceMarkdown(el: HTMLElement, context: MarkdownPostProcessorContext): string | undefined {
     const info = context.getSectionInfo(el);
     if (info) {
         return info.text
@@ -274,7 +279,7 @@ function getSourceMarkdown(el: HTMLElement, context: MarkdownPostProcessorContex
             .slice(info.lineStart, info.lineEnd + 1)
             .join("\n");
     } else {
-        return null;
+        return undefined;
     }
 }
 
