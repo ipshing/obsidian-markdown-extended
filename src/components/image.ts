@@ -1,3 +1,5 @@
+import { setTooltip } from "obsidian";
+
 const CSS_TOKEN = "css:";
 const CLS_TOKEN = "cls:";
 const ALT_TOKEN = "alt:";
@@ -96,6 +98,7 @@ export function renderImageAttributes(img: HTMLImageElement) {
 
     // Get span holding the image
     const span = img.closest("span.image-embed") ?? img.parentElement;
+    if (!span) return;
     // Create a figure element
     const figure = span.createEl("figure", { cls: "mx-image" });
     // Create a container to hold the image
@@ -108,7 +111,8 @@ export function renderImageAttributes(img: HTMLImageElement) {
     }
     // Add title to image only
     if (title) {
-        img.setAttr("title", title);
+        // img.setAttr("title", title);
+        setTooltip(img, title);
     }
     // Set styling
     if (cssClasses.length > 0) {
