@@ -172,22 +172,27 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.renderInlineQuotes && container.textContent.match(quoteRegex)) {
             renderMarkdownToken(container, QUOTE_TOKEN, "q");
         }
+
+        /**
+         * Disable sub/superscript functionality for now 2026.07.31
+         */
         // Render subscript
-        const subRegex = new RegExp(`^.*${SUB_TOKEN}.+${SUB_TOKEN}.*$`, "is");
-        if (this.settings.renderSubscript && container.textContent.match(subRegex)) {
-            renderMarkdownToken(container, SUB_TOKEN, "sub");
-        }
+        // const subRegex = new RegExp(`^.*${SUB_TOKEN}.+${SUB_TOKEN}.*$`, "is");
+        // if (this.settings.renderSubscript && container.textContent.match(subRegex)) {
+        //     renderMarkdownToken(container, SUB_TOKEN, "sub");
+        // }
         // Render superscript
-        const supRegex = new RegExp(`^.*\\${SUP_TOKEN}.+\\${SUP_TOKEN}.*$`, "is");
-        if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
-            renderMarkdownToken(container, SUP_TOKEN, "sup");
-        }
+        // const supRegex = new RegExp(`^.*\\${SUP_TOKEN}.+\\${SUP_TOKEN}.*$`, "is");
+        // if (this.settings.renderSuperscript && container.textContent.match(supRegex)) {
+        //     renderMarkdownToken(container, SUP_TOKEN, "sup");
+        // }
+
         // Inline code
         if (this.settings.showCopyButton && container.find("code")) {
             const codes = container.findAll("code");
             for (const code of codes) {
                 // Ignore if in a <pre> element (indicated code block)
-                if (code.parentElement.nodeName == "PRE") continue;
+                if (code.parentElement?.nodeName == "PRE") continue;
 
                 // Parse tokens from settings
                 let copyToken = this.settings.copyToken.replace(/\s/g, "");
@@ -294,9 +299,11 @@ export default class MarkdownExtended extends Plugin {
         if (this.settings.renderImageProperties) {
             // <img> tags that are not in a span.internal-embed indicate an
             // external link.These can just be formatted in place right now.
-            container.findAll("img:not(.internal-embed > img)").forEach((img: HTMLImageElement) => {
-                // Format image
-                renderImageAttributes(img);
+            container.findAll("img:not(.internal-embed > img)").forEach((img) => {
+                if (img instanceof HTMLImageElement) {
+                    // Format image
+                    renderImageAttributes(img);
+                }
             });
         }
     }
