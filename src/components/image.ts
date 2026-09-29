@@ -1,4 +1,5 @@
-import { setTooltip } from "obsidian";
+import { MarkdownPostProcessorContext, MarkdownRenderer, setTooltip } from "obsidian";
+import MarkdownExtended from "../main";
 
 const CSS_TOKEN = "css:";
 const CLS_TOKEN = "cls:";
@@ -13,7 +14,9 @@ const TITLE_TOKEN = "title:";
  * adding it to the element.
  * @param img The HTMLImageElement to process.
  */
-export function renderImageAttributes(img: HTMLImageElement) {
+export function renderImageAttributes(img: HTMLImageElement, plugin: MarkdownExtended, context: MarkdownPostProcessorContext) {
+    const sourcePath = typeof context == "string" ? context : (context?.sourcePath ?? plugin.app.workspace.getActiveFile()?.path ?? "");
+
     // Check for a <figure class="mx-image"> (indicates this has already been processed)
     if (img.closest("figure.mx-image")) return;
 
@@ -107,7 +110,14 @@ export function renderImageAttributes(img: HTMLImageElement) {
     container.appendChild(img);
     // Add the caption
     if (caption) {
-        figure.createEl("figcaption", { text: caption.trim() });
+        const captionEl = figure.createEl("figcaption");
+        // Use Obsidian's renderer to process the caption text
+        const temp = createDiv();
+        MarkdownRenderer.render(plugin.app, caption, temp, sourcePath, plugin);
+        // Renderer places element inside a <p> tag in the temp element
+        const p = temp.find("p");
+        if (p) captionEl.append(...p.childNodes);
+        else captionEl.append(...temp.childNodes);
     }
     // Add title to image only
     if (title) {

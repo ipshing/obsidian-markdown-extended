@@ -268,7 +268,7 @@ export default class MarkdownExtended extends Plugin {
                         // Also verify the settings
                         if (mutation.target instanceof HTMLElement && mutation.target.matches(".image-embed.is-loaded") && this.settings.renderImageProperties) {
                             // Format image
-                            renderImageAttributes(mutation.target.find("img") as HTMLImageElement);
+                            renderImageAttributes(mutation.target.find("img") as HTMLImageElement, this, context);
                         }
                         if (mutation.target instanceof HTMLElement && mutation.target.matches(".markdown-embed.is-loaded") && this.settings.renderEmbedProperties) {
                             const embed = mutation.target as HTMLElement;
@@ -302,7 +302,7 @@ export default class MarkdownExtended extends Plugin {
             container.findAll("img:not(.internal-embed > img)").forEach((img) => {
                 if (img instanceof HTMLImageElement) {
                     // Format image
-                    renderImageAttributes(img);
+                    renderImageAttributes(img, this, context);
                 }
             });
         }
