@@ -1,4 +1,4 @@
-import { Editor } from "obsidian";
+import { Editor, setTooltip } from "obsidian";
 import { CONCEAL_TOKEN } from "../constants";
 
 export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(element: HTMLElement, token: string, tag: K) {
@@ -29,6 +29,8 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
                 const tokenEl = temp.createEl(tag, { text: orphan.node.textContent.slice(tokenIndex + token.length) });
                 // Special case: Concealed Text
                 if (token == CONCEAL_TOKEN) {
+                    // Add tooltip
+                    setTooltip(tokenEl, "Click to toggle");
                     // Set css class
                     tokenEl.addClass("mx-spoiler-text");
                     // Add click handling
@@ -129,6 +131,8 @@ function replaceTokensInText<K extends keyof HTMLElementTagNameMap>(textNode: Ch
         const el = temp.createEl(tag, { text: text.slice(i + token.length, j) });
         // Special case: Concealed Text
         if (token == CONCEAL_TOKEN) {
+            // Add tooltip
+            setTooltip(el, "Click to toggle");
             // Set css class
             el.addClass("mx-spoiler-text");
             // Add click handling
