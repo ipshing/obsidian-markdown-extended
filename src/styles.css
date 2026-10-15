@@ -57,15 +57,17 @@ button.mx-copy-button:hover {
     padding-right: var(--size-2-2);
     cursor: pointer;
 }
-.mx-spoiler-text,
-.mx-spoiler-text a {
+.mx-spoiler-text {
     transition: color 150ms linear;
 }
-.mx-spoiler-text:not(.mx-spoiler-text-revealed),
-.mx-spoiler-text:not(.mx-spoiler-text-revealed) a {
+.mx-spoiler-text:not(.mx-spoiler-text-revealed) {
     color: transparent !important;
     user-select: none;
 }
-.mx-spoiler-text:not(.mx-spoiler-text-revealed) a {
+.mx-spoiler-text * {
+    transition: opacity 150ms linear;
+}
+.mx-spoiler-text:not(.mx-spoiler-text-revealed) * {
     pointer-events: none;
+    opacity: 0;
 }
