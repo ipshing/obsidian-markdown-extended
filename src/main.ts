@@ -7,6 +7,7 @@ import MarkdownIt from "markdown-it";
 import mTable from "markdown-it-multimd-table";
 import { MARKDOWN_IT_OPTIONS, TABLE_TOKEN, renderTable } from "./components/table";
 import { renderImageAttributes } from "./components/image";
+import { CONCEAL_TOKEN, COPY_TOKEN, OBSCURE_TOKEN, QUOTE_TOKEN, SUB_TOKEN, SUP_TOKEN } from "./constants";
 
 interface MarkdownExtendedSettings {
     version: string;
@@ -16,6 +17,7 @@ interface MarkdownExtendedSettings {
     renderDLists: boolean;
     renderInlineDLists: boolean;
     renderInlineQuotes: boolean;
+    renderConcealedText: boolean;
     renderSubscript: boolean;
     renderSuperscript: boolean;
     showCopyButton: boolean;
@@ -31,6 +33,7 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     renderDLists: true,
     renderInlineDLists: true,
     renderInlineQuotes: true,
+    renderConcealedText: true,
     renderSubscript: true,
     renderSuperscript: true,
     showCopyButton: true,
@@ -38,16 +41,10 @@ const DEFAULT_SETTINGS: MarkdownExtendedSettings = {
     obscureToken: "",
 };
 
-const QUOTE_TOKEN = '""';
-const SUB_TOKEN = "~";
-const SUP_TOKEN = "^";
-const COPY_TOKEN = "^";
-const OBSCURE_TOKEN = "^?";
-
 export default class MarkdownExtended extends Plugin {
-    settings: MarkdownExtendedSettings;
-    md: MarkdownIt;
-    private observers: MutationObserver[];
+    settings!: MarkdownExtendedSettings;
+    md!: MarkdownIt;
+    private observers!: MutationObserver[];
 
     async onload() {
         this.observers = [];
@@ -73,6 +70,14 @@ export default class MarkdownExtended extends Plugin {
         this.md.inline.ruler.enableOnly([]);
 
         // Add commands
+        this.addCommand({
+            id: "toggle-concealed",
+            name: "Toggle Concealed Text",
+            icon: "eye-off",
+            editorCallback: (editor) => {
+                toggleToken(editor, CONCEAL_TOKEN);
+            },
+        });
         this.addCommand({
             id: "toggle-quote",
             name: "Toggle Quote",
@@ -166,6 +171,11 @@ export default class MarkdownExtended extends Plugin {
         // Render inline description lists
         if (this.settings.renderDLists && this.settings.renderInlineDLists && container.textContent.match(DLIST_INLINE_REGEX) && !hasDv) {
             renderInlineDescriptionList(container);
+        }
+        // Render concealed text
+        const concealRegex = new RegExp(`^.*${CONCEAL_TOKEN}.+${CONCEAL_TOKEN}.*$`, "is");
+        if (this.settings.renderConcealedText && container.textContent.match(concealRegex)) {
+            renderMarkdownToken(container, CONCEAL_TOKEN, "span");
         }
         // Render inline quotations
         const quoteRegex = new RegExp(`^.*${QUOTE_TOKEN}.+${QUOTE_TOKEN}.*$`, "is");

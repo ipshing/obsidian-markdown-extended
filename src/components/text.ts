@@ -1,4 +1,5 @@
 import { Editor } from "obsidian";
+import { CONCEAL_TOKEN } from "../constants";
 
 export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(element: HTMLElement, token: string, tag: K) {
     // Validate
@@ -10,11 +11,12 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
     //     it must be fully contained between two tokens.
     //   - Tokens that do not have a matching pair must remain unchanged
 
-    let orphan: { node: ChildNode; index: number };
+    let orphan: { node: ChildNode; index: number } | undefined;
     for (let i = 0; i < element.childNodes.length; i++) {
         const child = element.childNodes[i];
+        if (!child) continue;
         // Look for tokens inside #text nodes
-        if (child.nodeName == "#text" && child.textContent.contains(token)) {
+        if (child.nodeName == "#text" && child.textContent?.contains(token)) {
             // First check if there's an orphan that needs connecting
             if (orphan) {
                 // Get the index of the token
@@ -25,8 +27,22 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
                 temp.append(orphan.node.textContent.slice(0, tokenIndex));
                 // Create a new element using 'tag' and add the text after the token
                 const tokenEl = temp.createEl(tag, { text: orphan.node.textContent.slice(tokenIndex + token.length) });
+                // Special case: Concealed Text
+                if (token == CONCEAL_TOKEN) {
+                    // Set css class
+                    tokenEl.addClass("mx-spoiler-text");
+                    // Add click handling
+                    tokenEl.onclick = (ev) => {
+                        // Ignore clicks on links
+                        const target = ev.target as HTMLElement;
+                        if (target && target.nodeName != "A") {
+                            tokenEl.toggleClass("mx-spoiler-text-revealed", !tokenEl.hasClass("mx-spoiler-text-revealed"));
+                        }
+                    };
+                }
                 // Add all nodes after orphan (but before child) to tokenEl.
-                // This automatically removes them from 'element'.
+                // This automatically removes them from 'element' which
+                // in turn updates the .nextSibling property.
                 while (orphan.node.nextSibling && orphan.node.nextSibling != child) {
                     tokenEl.append(orphan.node.nextSibling);
                 }
@@ -44,13 +60,14 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
                 element.removeChild(orphan.node);
                 element.removeChild(child);
                 // Clear orphan
-                orphan = null;
+                orphan = undefined;
                 // Set i = the index of 'last' (minus 1 because it will advance in the next loop)
                 i = element.indexOf(last) - 1;
                 // Loop
                 continue;
             }
 
+            // This does the actual work of replacing the token instances
             const result = replaceTokensInText(child, token, tag);
             if (result.nodes) {
                 // Add result.nodes after child, then remove child
@@ -71,10 +88,12 @@ export function renderMarkdownToken<K extends keyof HTMLElementTagNameMap>(eleme
         else if (child instanceof HTMLElement && child.hasClass("callout")) {
             const title = child.find(":scope > .callout-title > .callout-title-inner");
             if (title && title.hasChildNodes()) {
+                // Recurse to look inside element
                 renderMarkdownToken(title, token, tag);
             }
             const content = child.find(":scope > .callout-content");
             if (content && content.hasChildNodes()) {
+                // Recurse to look inside element
                 renderMarkdownToken(content, token, tag);
             }
         }
@@ -107,7 +126,16 @@ function replaceTokensInText<K extends keyof HTMLElementTagNameMap>(textNode: Ch
         // Split up the node, placing the text between the tokens
         // in a new element using 'tag'. Add the nodes to temp.
         temp.append(text.slice(0, i));
-        temp.createEl(tag, { text: text.slice(i + token.length, j) });
+        const el = temp.createEl(tag, { text: text.slice(i + token.length, j) });
+        // Special case: Concealed Text
+        if (token == CONCEAL_TOKEN) {
+            // Set css class
+            el.addClass("mx-spoiler-text");
+            // Add click handling
+            el.onclick = () => {
+                el.toggleClass("mx-spoiler-text-revealed", !el.hasClass("mx-spoiler-text-revealed"));
+            };
+        }
         temp.append(text.slice(j + token.length));
 
         // Check the last node in temp for the token and recurse if found

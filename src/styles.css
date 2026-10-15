@@ -48,3 +48,24 @@ button.mx-copy-button:hover {
 .mx-image figcaption {
     text-align: var(--figure-caption-text-align);
 }
+
+.mx-spoiler-text {
+    background-color: hsl(from var(--color-accent) h s l / 0.2);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-s);
+    padding-left: var(--size-2-2);
+    padding-right: var(--size-2-2);
+    cursor: pointer;
+}
+.mx-spoiler-text,
+.mx-spoiler-text a {
+    transition: color 150ms linear;
+}
+.mx-spoiler-text:not(.mx-spoiler-text-revealed),
+.mx-spoiler-text:not(.mx-spoiler-text-revealed) a {
+    color: transparent !important;
+    user-select: none;
+}
+.mx-spoiler-text:not(.mx-spoiler-text-revealed) a {
+    pointer-events: none;
+}

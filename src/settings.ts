@@ -72,12 +72,25 @@ export class MarkdownExtendedSettingsTab extends PluginSettingTab {
             // })
             .addSetting((setting) => {
                 setting
-                    .setName("Inline Quotes")
+                    .setName("Inline quotes")
                     .setDesc('Render text surrounded by double quotation marks ("") between <q></q> tags.')
                     .addToggle((toggle) =>
                         toggle.setValue(this.plugin.settings.renderInlineQuotes).onChange(async (value) => {
                             // Update settings
                             await this.plugin.updateSettings({ renderInlineQuotes: value });
+                            // Refresh settings view
+                            this.display();
+                        }),
+                    );
+            })
+            .addSetting((setting) => {
+                setting
+                    .setName("Spoiler text")
+                    .setDesc("Conceal text surrounded by double pipe symbols (||). Text can be revealed by clicking on it.")
+                    .addToggle((toggle) =>
+                        toggle.setValue(this.plugin.settings.renderConcealedText).onChange(async (value) => {
+                            // Update settings
+                            await this.plugin.updateSettings({ renderConcealedText: value });
                             // Refresh settings view
                             this.display();
                         }),
