@@ -1,6 +1,6 @@
 import Token from "markdown-it/lib/token";
 import { MarkdownPostProcessorContext, MarkdownRenderer } from "obsidian";
-import MarkdownExtended from "src/main";
+import MarkdownExtended from "../main";
 
 export const TABLE_TOKEN = "--mx-table";
 export const CAPTION_TOKEN = "caption:";
@@ -21,6 +21,10 @@ export function renderTable(container: HTMLElement, plugin: MarkdownExtended, co
         if (table) {
             // Replace all children in the container
             container.replaceChildren(table);
+            // Update class and attributes for container
+            container.removeClass("el-p");
+            container.addClass("el-table");
+            container.setAttr("dir", "ltr");
         }
     }
     // Hard mode: 'container' is a callout with a table in it
